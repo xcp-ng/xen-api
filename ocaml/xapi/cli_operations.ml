@@ -1702,12 +1702,16 @@ let vm_create printer rpc session_id params =
       ~shutdown_delay:0L
       ~order:0L
       ~suspend_SR:Ref.null
+      ~suspend_VDI:Ref.null
       ~version:0L
       ~generation_id:""
       ~hardware_platform_version:0L
       ~has_vendor_device:false ~reference_label:""
       ~domain_type:`unspecified
       ~nVRAM:[]
+      ~last_booted_record:""
+      ~last_boot_CPU_flags:[]
+      ~power_state:`Halted
   in
   let uuid=Client.VM.get_uuid rpc session_id vm in
   printer (Cli_printer.PList [uuid])
