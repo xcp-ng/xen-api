@@ -554,7 +554,7 @@ let create ~__context ~name_label ~name_description ~power_state
   : API.ref_VM =
 
   (* TODO: Error handling, but how? raise? or return null ref? or put default values? *)
-  if power_state = `Halted && suspend_VDI != Ref.null then begin
+  if power_state = `Halted && suspend_VDI <> Ref.null then begin
     error "No suspend_VDI should be provided if VM created in `Halted state";
   end
   else if power_state = `Suspended && suspend_VDI = Ref.null then begin
