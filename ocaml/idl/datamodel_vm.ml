@@ -1284,6 +1284,7 @@ let set_NVRAM_EFI_variables = call ~flags:[`Session]
                    ]
       ~lifecycle:[
         Published, rel_rio, "";
+        Changed, rel_stockholm, "possibility to create a VM in suspended mode with a suspend_VDI set";
       ]
       ~messages_default_allowed_roles:_R_VM_ADMIN
       ~messages:[ snapshot; snapshot_with_quiesce; clone; copy; revert; checkpoint;
