@@ -561,16 +561,14 @@ let create ~__context ~name_label ~name_description ~power_state
     ~nVRAM
   : API.ref_VM =
 
-  (* TODO: Error handling, but how? raise? or return null ref? or put default values? *)
-  if power_state = `Halted && suspend_VDI <> Ref.null then begin
-    error "No suspend_VDI should be provided if VM created in `Halted state";
-  end
-  else if power_state = `Suspended && suspend_VDI = Ref.null then begin
-    error "VM created in `Suspended state needs a suspend_VDI";
-  end
-  else begin
-    error "Bad power state for VM creation";
-  end;
+  (* `ignore` is necessary here or the compilation will break because this method doesn't return in this error cases *)
+  ignore(
+    match power_state with
+    | `Halted when suspend_VDI <> Ref.null -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"]))
+    | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["VM created in `Suspended state needs a suspend_VDI, non empty last_booted_record and non empty last_boot_CPU_flags"]))
+    | `Running | `Paused -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["Bad power state for VM creation "; Record_util.power_to_string power_state; " should be `Halted or `Suspended"]))
+    | `Halted | `Suspended -> ()
+  );
 
   if has_vendor_device then
     Pool_features.assert_enabled ~__context ~f:Features.PCI_device_for_auto_update;
