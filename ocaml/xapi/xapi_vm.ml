@@ -562,11 +562,19 @@ let create ~__context ~name_label ~name_description ~power_state
   : API.ref_VM =
 
   (* `ignore` is necessary here or the compilation will break because this method doesn't return in this error cases *)
-  ignore(
-    match power_state with
-    | `Halted when suspend_VDI <> Ref.null -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"]))
-    | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["VM created in `Suspended state needs a suspend_VDI, non empty last_booted_record and non empty last_boot_CPU_flags"]))
-    | `Running | `Paused -> raise (Api_errors.Server_error (Api_errors.vm_bad_power_state, ["Bad power state for VM creation "; Record_util.power_to_string power_state; " should be `Halted or `Suspended"]))
+  (ignore @@ match power_state with
+    | `Halted when suspend_VDI <> Ref.null ->
+      raise (Api_errors.(Server_error (vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"])))
+    | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] ->
+      raise (Api_errors.(Server_error (
+        vm_bad_power_state,
+        ["VM created in `Suspended state needs a suspend_VDI, non empty last_booted_record and non empty last_boot_CPU_flags"])
+      ))
+    | `Running | `Paused ->
+      raise (Api_errors.(Server_error (
+        vm_bad_power_state,
+        ["Bad power state for VM creation "; Record_util.power_to_string power_state; " should be `Halted or `Suspended"])
+      ))
     | `Halted | `Suspended -> ()
   );
 

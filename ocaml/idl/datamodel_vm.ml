@@ -1368,7 +1368,7 @@ let set_NVRAM_EFI_variables = call ~flags:[`Session]
            field ~ty:Int "user_version" "Creators of VMs and templates may store version information here.";
            field ~effect:true ~ty:Bool "is_a_template" "true if this is a template. Template VMs can never be started, they are used only for cloning other VMs";
            field ~ty:Bool ~default_value:(Some (VBool false)) ~qualifier:DynamicRO ~writer_roles:_R_POOL_ADMIN ~lifecycle:[Published, rel_falcon, "Identifies default templates"] "is_default_template" "true if this is a default template. Default template VMs can never be started or migrated, they are used only for cloning other VMs";
-           field ~qualifier:StaticRO ~default_value:(Some (VRef (null_ref))) ~ty:(Ref _vdi) "suspend_VDI" "The VDI that a suspend image is stored on. (Only has meaning if VM is currently suspended)";
+           field ~qualifier:StaticRO ~default_value:(Some (VRef null_ref)) ~ty:(Ref _vdi) "suspend_VDI" "The VDI that a suspend image is stored on. (Only has meaning if VM is currently suspended)";
 
            field ~writer_roles:_R_VM_POWER_ADMIN ~qualifier:DynamicRO ~ty:(Ref _host) "resident_on" "the host the VM is currently resident on";
            field ~writer_roles:_R_VM_POWER_ADMIN ~in_oss_since:None ~qualifier:DynamicRO ~ty:(Ref _host) "scheduled_to_be_resident_on" "the host on which the VM is due to be started/resumed/migrated. This acts as a memory reservation indicator";
