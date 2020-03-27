@@ -34,8 +34,18 @@ let unplug_force ~__context ~self =
   Xapi_xenops.vif_unplug ~__context ~self true
 
 let create  ~__context ~device ~network ~vM
-    ~mAC ~mTU ~other_config ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed : API.ref_VIF =
-  create ~__context ~device ~network ~vM ~currently_attached:false
+    ~mAC ~mTU ~other_config  ~currently_attached ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed : API.ref_VIF =
+
+  if currently_attached then begin
+    (ignore @@ match (Db.VM.get_power_state ~__context ~self:vM) with
+      | `Suspended -> ()
+      | _ -> raise (Api_errors.(Server_error (
+          vm_bad_power_state, ["Plugged VIF creation only allowed for suspended VM"])
+        ))
+    )
+  end;
+
+  create ~__context ~device ~network ~vM ~currently_attached
     ~mAC ~mTU ~other_config ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed
     ~ipv4_configuration_mode:`None ~ipv4_addresses:[] ~ipv4_gateway:""
     ~ipv6_configuration_mode:`None ~ipv6_addresses:[] ~ipv6_gateway:""
