@@ -553,7 +553,6 @@ let create ~__context ~name_label ~name_description ~power_state
     ~nVRAM
   : API.ref_VM =
 
-  (* `ignore` is necessary here or the compilation will break because this method doesn't return in this error cases *)
   begin match power_state with
     | `Halted when suspend_VDI <> Ref.null ->
       raise (Api_errors.(Server_error (vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"])))
