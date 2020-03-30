@@ -132,8 +132,16 @@ let unplug_force_no_safety_check = unplug_force
 let autodetect_mutex = Mutex.create ()
 
 (** VBD.create doesn't require any interaction with xen *)
-let create  ~__context ~vM ~vDI ~userdevice ~bootable ~mode ~_type ~unpluggable ~empty
-    ~other_config ~qos_algorithm_type ~qos_algorithm_params =
+let create  ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type ~unpluggable ~empty
+    ~other_config ~currently_attached ~qos_algorithm_type ~qos_algorithm_params =
+
+  if device <> "" || currently_attached then begin
+    match (Db.VM.get_power_state ~__context ~self:vM) with
+      | `Suspended -> ()
+      | _ -> raise (Api_errors.(Server_error (
+          vm_bad_power_state, ["Plugged VBD creation only allowed for suspended VM"])
+        ))
+  end;
 
   if not empty then begin
     let vdi_type = Db.VDI.get_type ~__context ~self:vDI in
@@ -217,9 +225,9 @@ let create  ~__context ~vM ~vDI ~userdevice ~bootable ~mode ~_type ~unpluggable 
 
         Db.VBD.create ~__context ~ref ~uuid:(Uuid.to_string uuid)
           ~current_operations:[] ~allowed_operations:[] ~storage_lock:false
-          ~vM ~vDI ~userdevice ~device:"" ~bootable ~mode ~_type ~unpluggable
+          ~vM ~vDI ~userdevice ~device ~bootable ~mode ~_type ~unpluggable
           ~empty ~reserved:false ~qos_algorithm_type ~qos_algorithm_params
-          ~qos_supported_algorithms:[] ~currently_attached:false
+          ~qos_supported_algorithms:[] ~currently_attached
           ~status_code:Int64.zero ~status_detail:"" ~runtime_properties:[]
           ~other_config ~metrics;
         update_allowed_operations ~__context ~self:ref;
