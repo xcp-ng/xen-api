@@ -554,7 +554,7 @@ let create ~__context ~name_label ~name_description ~power_state
   : API.ref_VM =
 
   (* `ignore` is necessary here or the compilation will break because this method doesn't return in this error cases *)
-  (ignore @@ match power_state with
+  begin match power_state with
     | `Halted when suspend_VDI <> Ref.null ->
       raise (Api_errors.(Server_error (vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"])))
     | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] ->
@@ -568,7 +568,7 @@ let create ~__context ~name_label ~name_description ~power_state
         ["Bad power state for VM creation "; Record_util.power_to_string power_state; " should be `Halted or `Suspended"])
       ))
     | `Halted | `Suspended -> ()
-  );
+  end;
 
   if has_vendor_device then
     Pool_features.assert_enabled ~__context ~f:Features.PCI_device_for_auto_update;
