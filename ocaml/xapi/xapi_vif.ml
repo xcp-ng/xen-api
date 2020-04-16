@@ -37,11 +37,14 @@ let create  ~__context ~device ~network ~vM
     ~mAC ~mTU ~other_config  ~currently_attached ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed : API.ref_VIF =
 
   if currently_attached then begin
-    match (Db.VM.get_power_state ~__context ~self:vM) with
+    let power_state = Db.VM.get_power_state ~__context ~self:vM in
+    match power_state with
       | `Suspended -> ()
-      | _ -> raise (Api_errors.(Server_error (
-          vm_bad_power_state, ["Plugged VIF creation only allowed for suspended VM"])
-        ))
+      | _ -> raise (Api_errors.(Server_error (vm_bad_power_state, [
+          Ref.string_of vM;
+          Record_util.power_to_string `Suspended;
+          Record_util.power_to_string power_state
+        ])))
   end;
 
   create ~__context ~device ~network ~vM ~currently_attached

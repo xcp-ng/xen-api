@@ -136,10 +136,14 @@ let create  ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type ~unpl
     ~other_config ~currently_attached ~qos_algorithm_type ~qos_algorithm_params =
 
   if device <> "" || currently_attached then begin
-    match (Db.VM.get_power_state ~__context ~self:vM) with
+    let power_state = Db.VM.get_power_state ~__context ~self:vM in
+    match power_state with
       | `Suspended -> ()
-      | _ -> raise (Api_errors.(Server_error (
-          vm_bad_power_state, ["Plugged VBD creation only allowed for suspended VM"])
+      | _ -> raise (Api_errors.(Server_error (vm_bad_power_state, [
+            Ref.string_of vM;
+            Record_util.power_to_string `Suspended;
+            Record_util.power_to_string power_state
+          ])
         ))
   end;
 

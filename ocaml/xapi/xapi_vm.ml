@@ -561,22 +561,6 @@ let create ~__context ~name_label ~name_description ~power_state
     ~nVRAM
   : API.ref_VM =
 
-  begin match power_state with
-    | `Halted when suspend_VDI <> Ref.null ->
-      raise (Api_errors.(Server_error (vm_bad_power_state, ["No suspend_VDI should be provided if VM created in `Halted state"])))
-    | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] ->
-      raise (Api_errors.(Server_error (
-        vm_bad_power_state,
-        ["VM created in `Suspended state needs a suspend_VDI, non empty last_booted_record and non empty last_boot_CPU_flags"])
-      ))
-    | `Running | `Paused ->
-      raise (Api_errors.(Server_error (
-        vm_bad_power_state,
-        ["Bad power state for VM creation "; Record_util.power_to_string power_state; " should be `Halted or `Suspended"])
-      ))
-    | `Halted | `Suspended -> ()
-  end;
-
   if has_vendor_device then
     Pool_features.assert_enabled ~__context ~f:Features.PCI_device_for_auto_update;
   (* Add random mac_seed if there isn't one specified already *)
@@ -592,6 +576,28 @@ let create ~__context ~name_label ~name_description ~power_state
   let vm_ref = Ref.make () in
   let resident_on = Ref.null in
   let scheduled_to_be_resident_on = Ref.null in
+
+  begin match power_state with
+    | `Halted when suspend_VDI <> Ref.null ->
+      raise (Api_errors.(Server_error (vm_bad_power_state, [
+        Ref.string_of vm_ref;
+        Record_util.power_to_string `Suspended;
+        Record_util.power_to_string power_state
+      ])))
+    | `Suspended when suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = [] ->
+      raise (Api_errors.(Server_error (vm_bad_power_state, [
+        Ref.string_of vm_ref;
+        Record_util.power_to_string `Halted;
+        Record_util.power_to_string power_state
+      ])))
+    | `Running | `Paused ->
+      raise (Api_errors.(Server_error (vm_bad_power_state, [
+        Ref.string_of vm_ref;
+        String.concat ", " (List.map Record_util.power_to_string [`Halted; `Suspended]);
+        Record_util.power_to_string power_state
+      ])))
+    | `Halted | `Suspended -> ()
+  end;
 
   let metrics = Ref.make () and metrics_uuid = Uuid.to_string (Uuid.make_uuid ()) in
   let vCPUs_utilisation = [(0L, 0.)] in
