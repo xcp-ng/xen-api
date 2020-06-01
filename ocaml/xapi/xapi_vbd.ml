@@ -135,17 +135,14 @@ let autodetect_mutex = Mutex.create ()
 let create  ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type ~unpluggable ~empty
     ~other_config ~currently_attached ~qos_algorithm_type ~qos_algorithm_params =
 
-  if device <> "" || currently_attached then begin
-    let power_state = Db.VM.get_power_state ~__context ~self:vM in
-    match power_state with
-      | `Suspended -> ()
-      | _ -> raise (Api_errors.(Server_error (vm_bad_power_state, [
-            Ref.string_of vM;
-            Record_util.power_to_string `Suspended;
-            Record_util.power_to_string power_state
-          ])
-        ))
-  end;
+  (* TODO: Raise bad power state error (once all API clients make sure to onlu call the needed params in the create method) when:
+    - power_state == `Halted and (device <> "" || currently_attached)
+  *)
+
+  let power_state = Db.VM.get_power_state ~__context ~self:vM in
+  let suspended = (power_state = `Suspended) in
+  let _device = if suspended then device else "" in
+  let _currently_attached = if suspended then currently_attached else false in
 
   if not empty then begin
     let vdi_type = Db.VDI.get_type ~__context ~self:vDI in
@@ -229,9 +226,9 @@ let create  ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type ~unpl
 
         Db.VBD.create ~__context ~ref ~uuid:(Uuid.to_string uuid)
           ~current_operations:[] ~allowed_operations:[] ~storage_lock:false
-          ~vM ~vDI ~userdevice ~device ~bootable ~mode ~_type ~unpluggable
+          ~vM ~vDI ~userdevice ~device:_device ~bootable ~mode ~_type ~unpluggable
           ~empty ~reserved:false ~qos_algorithm_type ~qos_algorithm_params
-          ~qos_supported_algorithms:[] ~currently_attached
+          ~qos_supported_algorithms:[] ~currently_attached:_currently_attached
           ~status_code:Int64.zero ~status_detail:"" ~runtime_properties:[]
           ~other_config ~metrics;
         update_allowed_operations ~__context ~self:ref;

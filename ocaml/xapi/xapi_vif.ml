@@ -36,18 +36,15 @@ let unplug_force ~__context ~self =
 let create  ~__context ~device ~network ~vM
     ~mAC ~mTU ~other_config  ~currently_attached ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed : API.ref_VIF =
 
-  if currently_attached then begin
-    let power_state = Db.VM.get_power_state ~__context ~self:vM in
-    match power_state with
-      | `Suspended -> ()
-      | _ -> raise (Api_errors.(Server_error (vm_bad_power_state, [
-          Ref.string_of vM;
-          Record_util.power_to_string `Suspended;
-          Record_util.power_to_string power_state
-        ])))
-  end;
+  (* TODO: Raise bad power state error (once all API clients make sure to onlu call the needed params in the create method) when:
+    - power_state == `Halted and currently_attached = true
+  *)
 
-  create ~__context ~device ~network ~vM ~currently_attached
+  let power_state = Db.VM.get_power_state ~__context ~self:vM in
+  let suspended = (power_state = `Suspended) in
+  let _currently_attached = if suspended then currently_attached else false in
+
+  create ~__context ~device ~network ~vM ~currently_attached:_currently_attached
     ~mAC ~mTU ~other_config ~qos_algorithm_type ~qos_algorithm_params ~locking_mode ~ipv4_allowed ~ipv6_allowed
     ~ipv4_configuration_mode:`None ~ipv4_addresses:[] ~ipv4_gateway:""
     ~ipv6_configuration_mode:`None ~ipv6_addresses:[] ~ipv6_gateway:""
