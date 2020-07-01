@@ -829,6 +829,24 @@ let remove_legacy_ssl_support =
                Db.Host.set_ssl_legacy ~__context ~self ~value:false))
   }
 
+let fill_tunnel_protocol =
+  {
+    description=
+      "Fill up the new field protocol of a Tunnel"
+  ; version= (fun _ -> true)
+  ; fn=
+      (fun ~__context ->
+        Db.Tunnel.get_all ~__context
+        |> List.iter (fun self ->
+          let pif = Db.Tunnel.get_access_PIF ~__context ~self in
+          let network = Db.PIF.get_network ~__context ~self:pif in
+          let other_config = Db.Network.get_other_config ~__context ~self:network in
+          let protocol = (List.assoc "xo-server:sdn-controller:encapsulation" other_config) in
+          Db.Tunnel.set_protocol ~__context ~self ~protocol:(Record_util.tunnel_protocol_of_string protocol)
+        )
+      )
+  }
+
 let rules =
   [
     upgrade_domain_type
@@ -857,6 +875,7 @@ let rules =
   ; upgrade_cluster_timeouts
   ; upgrade_secrets
   ; remove_legacy_ssl_support
+  ; fill_tunnel_protocol
   ]
 
 (* Maybe upgrade most recent db *)

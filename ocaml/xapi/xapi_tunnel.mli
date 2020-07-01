@@ -28,7 +28,7 @@ val create_internal :
   -> transport_PIF:[`PIF] Ref.t
   -> network:[`network] Ref.t
   -> host:[`host] Ref.t
-  -> protocol: API.tunnel_protocol ->
+  -> protocol: API.tunnel_protocol
   -> [`tunnel] Ref.t * [`PIF] Ref.t
 (** Internal version of [create] without checks/exceptions and auto-plugging *)
 

@@ -696,6 +696,20 @@ let bring_pif_up ~__context ?(management_interface = false) (pif : API.ref_PIF)
             with _ ->
               warn "could not update MTU field on PIF %s" rc.API.pIF_uuid
           ) ;
+
+          (* Open VxLAN UDP port (4789) if a VxLAN tunnel access PIF is plugged *)
+          ( match Xapi_pif_helpers.get_pif_type rc with
+            | Tunnel_access tunnel_ref ->
+              let protocol = Db.Tunnel.get_protocol ~__context ~self:tunnel_ref in
+              begin match protocol with
+                | `vxlan ->
+                  debug "Opening VxLAN UDP port for tunnel with protocol 'vxlan'";
+                  ignore @@ Helpers.call_script !Xapi_globs.firewall_port_config_script ["open"; "4789"; "udp"]
+                | `gre -> ()
+              end;
+            | _ -> ()
+          ) ;
+
           (* sync igmp_snooping_enabled *)
           if rc.API.pIF_VLAN = -1L then
             let igmp_snooping =
@@ -708,18 +722,6 @@ let bring_pif_up ~__context ?(management_interface = false) (pif : API.ref_PIF)
             if igmp_snooping' <> rc.API.pIF_igmp_snooping_status then
               Db.PIF.set_igmp_snooping_status ~__context ~self:pif
                 ~value:igmp_snooping')
-
-            (* Open VxLAN UDP port (4789) if a VxLAN tunnel access PIF is plugged *)
-            match Xapi_pif_helpers.get_pif_type rc with
-            | Tunnel_access tunnel_ref ->
-              let protocol = Db.Tunnel.get_protocol ~__context ~self:tunnel_ref in
-              begin match protocol with
-              | `vxlan ->
-                debug "Opening VxLAN UDP port for tunnel with protocol 'vxlan'";
-                ignore @@ Helpers.call_script !Xapi_globs.firewall_port_config_script ["open"; "4789"; "udp"]
-              | `gre -> ()
-              end;
-            | _ -> ()
 
 let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
   with_local_lock (fun () ->
@@ -771,3 +773,4 @@ let bring_pif_down ~__context ?(force = false) (pif : API.ref_PIF) =
           close_network_interface maybe_close_port ()
       | _ ->
           close_network_interface (fun () -> ()) ()
+  )

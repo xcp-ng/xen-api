@@ -2142,7 +2142,7 @@ let sync_tunnels ~__context ~host =
     in
     (* If the slave doesn't have any such PIF then make one: *)
     if existing_pif = [] then
-      (* On the master, we find the network the tunnel transport PIF is on *)
+      (* On the master, we find the network the tunnel transport PIF is on and its protocol *)
       let network_of_transport_pif_on_master, protocol =
         get_network_of_transport_pif master_pif_rec
       in

@@ -3754,7 +3754,7 @@ functor
         do_op_on ~local_fn ~__context
           ~host:(Db.PIF.get_host ~__context ~self:transport_PIF)
           (fun session_id rpc ->
-            Client.Tunnel.create rpc session_id transport_PIF network)
+            Client.Tunnel.create rpc session_id transport_PIF network protocol)
 
       let destroy ~__context ~self =
         info "Tunnel.destroy: tunnel = '%s'" (tunnel_uuid ~__context self) ;
