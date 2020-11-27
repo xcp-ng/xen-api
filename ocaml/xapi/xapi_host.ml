@@ -2272,9 +2272,11 @@ let migrate_receive ~__context ~host ~network ~options =
         | _ ->
             failwith "No IPv6 address on PIF"
   ) ;
-  ( if primary_address_type = `IPv6 then
-    ip := Http.Url.maybe_wrap_IPv6_literal ip
-  ) ;
+  let ip =
+    match primary_address_type with
+    | `IPv4 -> ip
+    | `IPv6 -> Http.Url.maybe_wrap_IPv6_literal ip
+  in
   let sm_url =
     Printf.sprintf "http://%s/services/SM?session_id=%s" ip new_session_id
   in
