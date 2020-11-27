@@ -2235,19 +2235,45 @@ let migrate_receive ~__context ~host ~network ~options =
            ( Api_errors.host_cannot_attach_network
            , [Ref.string_of host; Ref.string_of network] ))
   in
-  let ip = Db.PIF.get_IP ~__context ~self:pif in
+  let primary_address_type =
+    Db.PIF.get_primary_address_type ~__context ~self:pif
+  in
+  let ip =
+    match primary_address_type with
+    | `IPv4 ->
+      Db.PIF.get_IP ~__context ~self:pif
+    | `IPv6 ->
+      List.hd (Db.PIF.get_IPv6 ~__context ~self:pif)
+  in
   ( if String.length ip = 0 then
-      match Db.PIF.get_ip_configuration_mode ~__context ~self:pif with
-      | `None ->
-          raise
-            (Api_errors.Server_error
-               (Api_errors.pif_has_no_network_configuration, [Ref.string_of pif]))
-      | `DHCP ->
-          raise
-            (Api_errors.Server_error
-               (Api_errors.interface_has_no_ip, [Ref.string_of pif]))
-      | _ ->
-          failwith "No IP address on PIF"
+      match primary_address_type with
+      | `IPv4 ->
+        match Db.PIF.get_ip_configuration_mode ~__context ~self:pif with
+        | `None ->
+            raise
+              (Api_errors.Server_error
+                (Api_errors.pif_has_no_network_configuration, [Ref.string_of pif]))
+        | `DHCP ->
+            raise
+              (Api_errors.Server_error
+                (Api_errors.interface_has_no_ip, [Ref.string_of pif]))
+        | _ ->
+            failwith "No IP address on PIF"
+      | `IPv6 ->
+        match Db.PIF.get_ip_configuration_mode ~__context ~self:pif with
+        | `None6 ->
+            raise
+              (Api_errors.Server_error
+                (Api_errors.pif_has_no_network_configuration, [Ref.string_of pif]))
+        | `DHCP6 ->
+            raise
+              (Api_errors.Server_error
+                (Api_errors.interface_has_no_ip, [Ref.string_of pif]))
+        | _ ->
+            failwith "No IPv6 address on PIF"
+  ) ;
+  ( if primary_address_type = `IPv6 then
+    ip := Http.Url.maybe_wrap_IPv6_literal ip
   ) ;
   let sm_url =
     Printf.sprintf "http://%s/services/SM?session_id=%s" ip new_session_id
