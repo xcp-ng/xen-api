@@ -253,6 +253,8 @@ let tools_sr_pbd_device_config =
 
 let create_tools_sr = ref false
 
+let allow_host_sched_gran_modification = ref false
+
 let default_template_key = "default_template"
 
 let base_template_name_key = "base_template_name"
@@ -456,6 +458,7 @@ let rpu_allowed_vm_operations =
   ; `hard_shutdown
   ; `import
   ; `make_into_template
+  ; `migrate_send
   ; `pause
   ; `pool_migrate
   ; `power_state_reset
@@ -1172,6 +1175,10 @@ let other_options =
     , Arg.Set_string extauth_ad_backend
     , (fun () -> !extauth_ad_backend)
     , "Which AD backend used to talk to DC" )
+  ; ( "allow-host-sched-gran-modification"
+    , Arg.Set allow_host_sched_gran_modification
+    , (fun () -> string_of_bool !allow_host_sched_gran_modification)
+    , "Allows to modify the host's scheduler granularity" )
   ]
 
 let all_options = options_of_xapi_globs_spec @ other_options

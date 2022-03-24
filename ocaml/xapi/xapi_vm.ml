@@ -608,18 +608,19 @@ let resume_on ~__context ~vm ~host ~start_paused ~force =
   assert_host_is_localhost ~__context ~host ;
   resume ~__context ~vm ~start_paused ~force
 
-let create ~__context ~name_label ~name_description ~user_version ~is_a_template
+let create ~__context ~name_label ~name_description ~power_state ~user_version ~is_a_template ~suspend_VDI
     ~affinity ~memory_target ~memory_static_max ~memory_dynamic_max
     ~memory_dynamic_min ~memory_static_min ~vCPUs_params ~vCPUs_max
     ~vCPUs_at_startup ~actions_after_shutdown ~actions_after_reboot
     ~actions_after_crash ~pV_bootloader ~pV_kernel ~pV_ramdisk ~pV_args
     ~pV_bootloader_args ~pV_legacy_args ~hVM_boot_policy ~hVM_boot_params
-    ~hVM_shadow_multiplier ~platform ~pCI_bus ~other_config ~recommendations
+    ~hVM_shadow_multiplier ~platform ~pCI_bus ~other_config ~last_boot_CPU_flags ~last_booted_record ~recommendations
     ~xenstore_data ~ha_always_run ~ha_restart_priority ~tags ~blocked_operations
     ~protection_policy ~is_snapshot_from_vmpp ~snapshot_schedule
     ~is_vmss_snapshot ~appliance ~start_delay ~shutdown_delay ~order ~suspend_SR
     ~version ~generation_id ~hardware_platform_version ~has_vendor_device
     ~reference_label ~domain_type ~nVRAM : API.ref_VM =
+
   if has_vendor_device then
     Pool_features.assert_enabled ~__context
       ~f:Features.PCI_device_for_auto_update ;
@@ -636,23 +637,47 @@ let create ~__context ~name_label ~name_description ~user_version ~is_a_template
   let vm_ref = Ref.make () in
   let resident_on = Ref.null in
   let scheduled_to_be_resident_on = Ref.null in
+  (* TODO: Raise bad power state error (once all API clients make sure to only call the needed params in the create method) when:
+    - power_state == `Halted and suspend_VDI <> Ref.null
+    - power_state == `Suspended and suspend_VDI = Ref.null || last_booted_record = "" || last_boot_CPU_flags = []
+    - power_state not in [`Halted, `Suspended]
+  *)
+
   let metrics = Ref.make ()
   and metrics_uuid = Uuid.to_string (Uuid.make_uuid ()) in
   let vCPUs_utilisation = [(0L, 0.)] in
+  let suspended = (power_state = `Suspended) in
+  let current_domain_type = if suspended then domain_type else `unspecified in
   Db.VM_metrics.create ~__context ~ref:metrics ~uuid:metrics_uuid
     ~memory_actual:0L ~vCPUs_number:0L ~vCPUs_utilisation ~vCPUs_CPU:[]
     ~vCPUs_params:[] ~vCPUs_flags:[] ~state:[] ~start_time:Date.never
     ~install_time:Date.never ~last_updated:Date.never ~other_config:[]
     ~hvm:false ~nested_virt:false ~nomigrate:false
-    ~current_domain_type:`unspecified ;
+    ~current_domain_type ;
   let domain_type =
     if domain_type = `unspecified then
       derive_domain_type ~hVM_boot_policy
     else
       domain_type
   in
+  let _last_booted_record = if suspended then last_booted_record else "" in
+  let _last_boot_CPU_flags = if suspended then last_boot_CPU_flags else [] in
+  let _power_state = if suspended then `Suspended else `Halted in
+  let _suspend_VDI = if suspended then suspend_VDI else Ref.null in
+
+  if suspended && (
+    _last_boot_CPU_flags = [] ||
+    _last_booted_record = "" ||
+    _suspend_VDI = Ref.null
+  ) then begin
+    raise (Api_errors.(Server_error (vm_bad_power_state, [
+        Ref.string_of vm_ref;
+        Record_util.power_to_string `Halted;
+        Record_util.power_to_string power_state
+      ])))
+  end;
   Db.VM.create ~__context ~ref:vm_ref ~uuid:(Uuid.to_string uuid)
-    ~power_state:`Halted ~allowed_operations:[] ~current_operations:[]
+    ~power_state:_power_state ~allowed_operations:[] ~current_operations:[]
     ~blocked_operations:[] ~name_label ~name_description ~user_version
     ~is_a_template ~is_default_template:false ~transportable_snapshot_id:""
     ~is_a_snapshot:false ~snapshot_time:Date.never ~snapshot_of:Ref.null
@@ -662,17 +687,16 @@ let create ~__context ~name_label ~name_description ~user_version ~is_a_template
     ~memory_static_min ~vCPUs_params ~vCPUs_at_startup ~vCPUs_max
     ~actions_after_shutdown ~actions_after_reboot ~actions_after_crash
     ~hVM_boot_policy ~hVM_boot_params ~hVM_shadow_multiplier
-    ~suspend_VDI:Ref.null ~platform ~nVRAM ~pV_kernel ~pV_ramdisk ~pV_args
+    ~suspend_VDI:_suspend_VDI ~platform ~nVRAM ~pV_kernel ~pV_ramdisk ~pV_args
     ~pV_bootloader ~pV_bootloader_args ~pV_legacy_args ~pCI_bus ~other_config
-    ~domid:(-1L) ~domarch:"" ~last_boot_CPU_flags:[] ~is_control_domain:false
-    ~metrics ~guest_metrics:Ref.null ~last_booted_record:"" ~xenstore_data
+    ~domid:(-1L) ~domarch:"" ~last_boot_CPU_flags:_last_boot_CPU_flags ~is_control_domain:false
+    ~metrics ~guest_metrics:Ref.null ~last_booted_record:_last_booted_record ~xenstore_data
     ~recommendations ~blobs:[] ~ha_restart_priority ~ha_always_run ~tags
     ~bios_strings:[] ~protection_policy:Ref.null ~is_snapshot_from_vmpp:false
     ~snapshot_schedule:Ref.null ~is_vmss_snapshot:false ~appliance ~start_delay
     ~shutdown_delay ~order ~suspend_SR ~version ~generation_id
     ~hardware_platform_version ~has_vendor_device ~requires_reboot:false
     ~reference_label ~domain_type ;
-  Db.VM.set_power_state ~__context ~self:vm_ref ~value:`Halted ;
   Xapi_vm_lifecycle.update_allowed_operations ~__context ~self:vm_ref ;
   update_memory_overhead ~__context ~vm:vm_ref ;
   update_vm_virtual_hardware_platform_version ~__context ~vm:vm_ref ;

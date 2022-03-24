@@ -3396,6 +3396,21 @@ functor
         let local_fn = Local.Host.cleanup_pool_secret ~host ~old_ps ~new_ps in
         do_op_on ~__context ~host ~local_fn (fun session_id rpc ->
             Client.Host.cleanup_pool_secret rpc session_id host old_ps new_ps)
+
+      let set_sched_gran ~__context ~self ~value =
+        info "Host.set_sched_gran: host='%s' sched='%s'"
+          (host_uuid ~__context self)
+          (Record_util.host_sched_gran_to_string value) ;
+        let local_fn = Local.Host.set_sched_gran ~self ~value in
+        do_op_on ~local_fn ~__context ~host:self (fun session_id rpc ->
+          Client.Host.set_sched_gran rpc session_id self value)
+
+      let get_sched_gran ~__context ~self =
+        info "Host.get_sched_gran: host='%s'" (host_uuid ~__context self) ;
+            let local_fn = Local.Host.get_sched_gran ~self in
+            do_op_on ~local_fn ~__context ~host:self (fun session_id rpc ->
+            Client.Host.get_sched_gran rpc session_id self)
+
     end
 
     module Host_crashdump = struct
@@ -3609,11 +3624,11 @@ functor
 
       (* -------------------------------------------------------------------------- *)
 
-      let create ~__context ~device ~network ~vM ~mAC ~mTU ~other_config
+      let create ~__context ~device ~network ~vM ~mAC ~mTU ~other_config ~currently_attached
           ~qos_algorithm_type ~qos_algorithm_params =
         info "VIF.create: VM = '%s'; network = '%s'" (vm_uuid ~__context vM)
           (network_uuid ~__context network) ;
-        Local.VIF.create ~__context ~device ~network ~vM ~mAC ~mTU ~other_config
+        Local.VIF.create ~__context ~device ~network ~vM ~mAC ~mTU ~other_config ~currently_attached
           ~qos_algorithm_type ~qos_algorithm_params
 
       let destroy ~__context ~self =
@@ -3783,13 +3798,13 @@ functor
     end
 
     module Tunnel = struct
-      let create ~__context ~transport_PIF ~network =
+      let create ~__context ~transport_PIF ~network ~protocol =
         info "Tunnel.create: network = '%s'" (network_uuid ~__context network) ;
-        let local_fn = Local.Tunnel.create ~transport_PIF ~network in
+        let local_fn = Local.Tunnel.create ~transport_PIF ~network ~protocol in
         do_op_on ~local_fn ~__context
           ~host:(Db.PIF.get_host ~__context ~self:transport_PIF)
           (fun session_id rpc ->
-            Client.Tunnel.create rpc session_id transport_PIF network)
+            Client.Tunnel.create rpc session_id transport_PIF network protocol)
 
       let destroy ~__context ~self =
         info "Tunnel.destroy: tunnel = '%s'" (tunnel_uuid ~__context self) ;
@@ -4825,14 +4840,14 @@ functor
       (* -------------------------------------------------------------------------- *)
 
       (* these are db functions *)
-      let create ~__context ~vM ~vDI ~userdevice ~bootable ~mode ~_type
-          ~unpluggable ~empty ~other_config ~qos_algorithm_type
+      let create ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type
+          ~unpluggable ~empty ~other_config ~currently_attached ~qos_algorithm_type
           ~qos_algorithm_params =
         info "VBD.create: VM = '%s'; VDI = '%s'" (vm_uuid ~__context vM)
           (vdi_uuid ~__context vDI) ;
         (* NB must always execute this on the master because of the autodetect_mutex *)
-        Local.VBD.create ~__context ~vM ~vDI ~userdevice ~bootable ~mode ~_type
-          ~unpluggable ~empty ~other_config ~qos_algorithm_type
+        Local.VBD.create ~__context ~vM ~vDI ~device ~userdevice ~bootable ~mode ~_type
+          ~unpluggable ~empty ~other_config ~currently_attached ~qos_algorithm_type
           ~qos_algorithm_params
 
       let set_mode ~__context ~self ~value =

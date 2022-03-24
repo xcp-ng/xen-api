@@ -163,7 +163,7 @@ let test_vbd_create () =
     (fun () ->
       Xapi_vbd.create ~__context ~vM ~vDI ~userdevice:"autodetect"
         ~bootable:true ~mode:`RW ~_type:`Disk ~unpluggable:true ~empty:false
-        ~other_config:[] ~qos_algorithm_type:"" ~qos_algorithm_params:[]
+        ~other_config:[] ~qos_algorithm_type:"" ~qos_algorithm_params:[] ~device:"" ~currently_attached:false
       |> ignore)
 
 let test_get_nbd_info =

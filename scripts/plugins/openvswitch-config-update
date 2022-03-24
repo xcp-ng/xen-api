@@ -74,6 +74,8 @@ def update(session, args):
         delete_cacert()
         cmd = [iptablectl, 'close', '6640']
         output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
+        cmd = [iptablectl, 'close', '6653']
+        output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
         try:
             emergency_reset(session, None)
         except:
@@ -247,6 +249,8 @@ def setControllerCfg(bootstrap, controller):
                        preinstalled_cacert,
                        '--', 'set-manager', controller])
 
+    cmd = [iptablectl, 'open', '6653']
+    output = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()
 
 def composeController(protocol, controllerIP, tcpport):
     bootstrap = False

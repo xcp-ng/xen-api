@@ -2113,7 +2113,8 @@ let sync_tunnels ~__context ~host =
         let transport_pif =
           Db.Tunnel.get_transport_PIF ~__context ~self:tunnel
         in
-        Db.PIF.get_network ~__context ~self:transport_pif
+        let protocol = Db.Tunnel.get_protocol ~__context ~self:tunnel in
+        ( Db.PIF.get_network ~__context ~self:transport_pif, protocol )
     | _ ->
         raise
           Api_errors.(
@@ -2136,8 +2137,8 @@ let sync_tunnels ~__context ~host =
     in
     (* If the slave doesn't have any such PIF then make one: *)
     if existing_pif = [] then
-      (* On the master, we find the network the tunnel transport PIF is on *)
-      let network_of_transport_pif_on_master =
+      (* On the master, we find the network the tunnel transport PIF is on and its protocol *)
+      let network_of_transport_pif_on_master, protocol =
         get_network_of_transport_pif master_pif_rec
       in
       let pifs =
@@ -2158,7 +2159,7 @@ let sync_tunnels ~__context ~host =
           (* this is the PIF on which we want as transport PIF; let's make it *)
           ignore
             (Xapi_tunnel.create_internal ~__context ~transport_PIF:pif_ref
-               ~network:master_pif_rec.API.pIF_network ~host)
+               ~network:master_pif_rec.API.pIF_network ~host ~protocol)
       | _ ->
           (* This should never happen cos we should never have more than one of _our_ pifs
              					 * on the same nework *)
@@ -2385,3 +2386,42 @@ let notify_send_new_pool_secret ~__context ~host ~old_ps ~new_ps =
 
 let cleanup_pool_secret ~__context ~host ~old_ps ~new_ps =
   Xapi_psr.cleanup ~__context ~old_ps ~new_ps
+
+let set_sched_gran ~__context ~self ~value =
+  if Helpers.get_localhost ~__context <> self then
+    failwith "Forwarded to the wrong host" ;
+  if not !Xapi_globs.allow_host_sched_gran_modification then
+    raise
+      Api_errors.(
+        Server_error (operation_not_allowed, ["Disabled by xapi.conf"])) ;
+  let arg =
+    Printf.sprintf "sched-gran=%s" (Record_util.host_sched_gran_to_string value)
+  in
+  let args = ["--set-xen"; arg] in
+  try
+    let _ = Helpers.call_script !Xapi_globs.xen_cmdline_script args in
+    ()
+  with e ->
+    error "Failed to update sched-gran: %s" (Printexc.to_string e) ;
+    raise
+      Api_errors.(
+        Server_error (internal_error, ["Failed to update sched-gran"]))
+
+let get_sched_gran ~__context ~self =
+  if Helpers.get_localhost ~__context <> self then
+    failwith "Forwarded to the wrong host" ;
+  let args = ["--get-xen"; "sched-gran"] in
+  try
+    let ret =
+      String.trim (Helpers.call_script !Xapi_globs.xen_cmdline_script args)
+    in
+    match ret with
+    | "" ->
+        `cpu (* If no entry then default value: cpu *)
+    | _ ->
+        let value = List.nth (String.split_on_char '=' ret) 1 in
+        Record_util.host_sched_gran_of_string value
+  with e ->
+    error "Failed to get sched-gran: %s" (Printexc.to_string e) ;
+    raise
+      Api_errors.(Server_error (internal_error, ["Failed to get sched-gran"]))

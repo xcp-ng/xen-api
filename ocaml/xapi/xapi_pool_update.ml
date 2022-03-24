@@ -274,7 +274,7 @@ let attach_helper ~__context ~uuid ~vdi ~use_localhost_proxy =
               Client.VBD.create ~rpc ~session_id ~vM:dom0 ~empty:false ~vDI:vdi
                 ~userdevice:"autodetect" ~bootable:false ~mode:`RO ~_type:`Disk
                 ~unpluggable:true ~qos_algorithm_type:""
-                ~qos_algorithm_params:[] ~other_config:[]
+                ~qos_algorithm_params:[] ~other_config:[] ~device:"" ~currently_attached:false
             in
             Client.VBD.plug ~rpc ~session_id ~self:vbd ;
             "/dev/" ^ Client.VBD.get_device ~rpc ~session_id ~self:vbd)

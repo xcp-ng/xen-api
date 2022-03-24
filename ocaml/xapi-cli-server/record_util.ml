@@ -595,6 +595,25 @@ let host_display_to_string h =
   | `disable_on_reboot ->
       "disable_on_reboot"
 
+let host_sched_gran_of_string s =
+  match String.lowercase_ascii s with
+  | "core" ->
+      `core
+  | "cpu" ->
+      `cpu
+  | "socket" ->
+      `socket
+  | _ ->
+      raise (Record_failure ("Expected 'core','cpu', 'socket', got " ^ s))
+
+let host_sched_gran_to_string = function
+  | `core ->
+      "core"
+  | `cpu ->
+      "cpu"
+  | `socket ->
+      "socket"
+
 let pgpu_dom0_access_to_string x = host_display_to_string x
 
 let string_to_vdi_onboot s =
@@ -827,6 +846,16 @@ let sdn_protocol_of_string s =
       raise (Record_failure ("Expected 'ssl','pssl', got " ^ s))
 
 let sdn_protocol_to_string = function `ssl -> "ssl" | `pssl -> "pssl"
+
+let tunnel_protocol_of_string s =
+  match String.lowercase_ascii s with
+  | "gre" -> `gre
+  | "vxlan" -> `vxlan
+  | _ ->  raise (Record_failure ("Expected 'gre','vxlan', got "^s))
+
+let tunnel_protocol_to_string = function
+  | `gre -> "gre"
+  | `vxlan -> "vxlan"
 
 let pif_igmp_status_to_string = function
   | `enabled ->
