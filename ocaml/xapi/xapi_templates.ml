@@ -147,7 +147,7 @@ let create_disk rpc session_id vm sm_config disk =
       ~bootable:disk.bootable ~mode:`RW ~_type:`Disk
       ~unpluggable:(disk._type <> `system)
       ~empty:false ~qos_algorithm_type:"" ~qos_algorithm_params:[]
-      ~other_config:[(Constants.owner_key, "")]
+      ~other_config:[(Constants.owner_key, "")] ~device:"" ~currently_attached:false
   in
   let device = Client.VBD.get_userdevice ~rpc ~session_id ~self:vbd_ref in
   Client.VDI.set_name_label ~rpc ~session_id ~self:vdi ~value:device ;

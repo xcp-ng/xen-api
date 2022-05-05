@@ -98,9 +98,10 @@ let make __context rpc session_id srid (vms, vdis) =
           ~tags:[] ~protection_policy:Ref.null ~is_snapshot_from_vmpp:false
           ~snapshot_schedule:Ref.null ~is_vmss_snapshot:false
           ~appliance:Ref.null ~start_delay:0L ~shutdown_delay:0L ~order:0L
-          ~suspend_SR:Ref.null ~version:0L ~generation_id:""
+          ~suspend_SR:Ref.null ~suspend_VDI:Ref.null ~version:0L ~generation_id:""
           ~hardware_platform_version:0L ~has_vendor_device:false
           ~reference_label:"" ~nVRAM:[]
+          ~last_booted_record:"" ~last_boot_CPU_flags:[] ~power_state:`Halted
       in
       TaskHelper.operate_on_db_task ~__context (fun task ->
           Client.VM.add_to_other_config ~rpc ~session_id ~self:vm_ref
@@ -132,7 +133,7 @@ let make __context rpc session_id srid (vms, vdis) =
               ~userdevice:vbd.device ~bootable:(vbd.funct = Root) ~mode:vbd.mode
               ~_type:`Disk ~empty:false
               ~unpluggable:(vbd.vdi.variety <> `system)
-              ~qos_algorithm_type:"" ~qos_algorithm_params:[]
+              ~qos_algorithm_type:"" ~qos_algorithm_params:[] ~device:"" ~currently_attached:false
           in
           clean_up_stack :=
             (fun __context rpc session_id ->
@@ -145,7 +146,7 @@ let make __context rpc session_id srid (vms, vdis) =
             (Client.VBD.create ~rpc ~session_id ~vM:vm_ref ~vDI:Ref.null
                ~other_config:[] ~userdevice:"autodetect" ~bootable:false
                ~mode:`RO ~_type:`CD ~unpluggable:true ~empty:true
-               ~qos_algorithm_type:"" ~qos_algorithm_params:[])
+               ~qos_algorithm_type:"" ~qos_algorithm_params:[] ~device:"" ~currently_attached:false )
         with e ->
           warn "could not create CD drive on imported XVA: %s"
             (Printexc.to_string e)

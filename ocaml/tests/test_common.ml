@@ -140,10 +140,10 @@ let make_vm ~__context ?(name_label = "name_label")
     ?(tags = []) ?(blocked_operations = []) ?(protection_policy = Ref.null)
     ?(is_snapshot_from_vmpp = false) ?(appliance = Ref.null) ?(start_delay = 0L)
     ?(snapshot_schedule = Ref.null) ?(is_vmss_snapshot = false)
-    ?(shutdown_delay = 0L) ?(order = 0L) ?(suspend_SR = Ref.null)
+    ?(shutdown_delay = 0L) ?(order = 0L) ?(suspend_SR = Ref.null) ?(suspend_VDI=Ref.null)
     ?(version = 0L) ?(generation_id = "0:0") ?(hardware_platform_version = 0L)
     ?(has_vendor_device = false) ?(has_vendor_device = false)
-    ?(reference_label = "") ?(domain_type = `hvm) ?(nVRAM = []) () =
+    ?(reference_label = "") ?(domain_type = `hvm) ?(nVRAM = []) ?(last_booted_record="") ?(last_boot_CPU_flags=[]) ?(power_state=`Halted) () =
   Xapi_vm.create ~__context ~name_label ~name_description ~user_version
     ~is_a_template ~affinity ~memory_target ~memory_static_max
     ~memory_dynamic_max ~memory_dynamic_min ~memory_static_min ~vCPUs_params
@@ -153,9 +153,9 @@ let make_vm ~__context ?(name_label = "name_label")
     ~hVM_shadow_multiplier ~platform ~nVRAM ~pCI_bus ~other_config
     ~xenstore_data ~recommendations ~ha_always_run ~ha_restart_priority ~tags
     ~blocked_operations ~protection_policy ~is_snapshot_from_vmpp ~appliance
-    ~start_delay ~shutdown_delay ~order ~suspend_SR ~snapshot_schedule
+    ~start_delay ~shutdown_delay ~order ~suspend_SR ~suspend_VDI ~snapshot_schedule
     ~is_vmss_snapshot ~version ~generation_id ~hardware_platform_version
-    ~has_vendor_device ~reference_label ~domain_type
+    ~has_vendor_device ~reference_label ~domain_type ~last_booted_record ~last_boot_CPU_flags ~power_state
 
 let make_host ~__context ?(uuid = make_uuid ()) ?(name_label = "host")
     ?(name_description = "description") ?(hostname = "localhost")

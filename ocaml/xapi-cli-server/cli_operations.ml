@@ -216,7 +216,7 @@ let create_vbd_and_plug_with_other_config rpc session_id vm vdi device_name
   let vbd =
     Client.VBD.create ~rpc ~session_id ~vM:vm ~vDI:vdi ~userdevice:device_name
       ~bootable ~mode:rw ~_type:cd ~unpluggable ~empty:false
-      ~qos_algorithm_type:qtype ~qos_algorithm_params:qparams ~other_config
+      ~qos_algorithm_type:qtype ~qos_algorithm_params:qparams ~other_config ~device:"" ~currently_attached:false
   in
   try Client.VBD.plug rpc session_id vbd
   with Api_errors.Server_error (_, _) as e ->
@@ -2051,7 +2051,7 @@ let vbd_create printer rpc session_id params =
     Client.VBD.create ~rpc ~session_id ~vM ~vDI
       ~userdevice:(List.assoc "device" params)
       ~bootable ~mode ~_type ~unpluggable ~empty ~qos_algorithm_type:""
-      ~qos_algorithm_params:[] ~other_config:[]
+      ~qos_algorithm_params:[] ~other_config:[] ~device:"" ~currently_attached:false
   in
   let vbd_uuid = Client.VBD.get_uuid rpc session_id vbd in
   printer (Cli_printer.PList [vbd_uuid])
@@ -2369,7 +2369,7 @@ let vif_create printer rpc session_id params =
   let network = Client.Network.get_by_uuid rpc session_id network_uuid in
   let mtu = Client.Network.get_MTU rpc session_id network in
   let vif =
-    Client.VIF.create rpc session_id device network vm mac mtu [] "" []
+    Client.VIF.create rpc session_id device network vm mac mtu [] false "" []
       `network_default [] []
   in
   let uuid = Client.VIF.get_uuid rpc session_id vif in
@@ -2476,10 +2476,10 @@ let vm_create printer rpc session_id params =
       ~ha_always_run:false ~ha_restart_priority:"" ~tags:[]
       ~protection_policy:Ref.null ~is_snapshot_from_vmpp:false
       ~snapshot_schedule:Ref.null ~is_vmss_snapshot:false ~appliance:Ref.null
-      ~start_delay:0L ~shutdown_delay:0L ~order:0L ~suspend_SR:Ref.null
+      ~start_delay:0L ~shutdown_delay:0L ~order:0L ~suspend_SR:Ref.null ~suspend_VDI:Ref.null
       ~version:0L ~generation_id:"" ~hardware_platform_version:0L
       ~has_vendor_device:false ~reference_label:"" ~domain_type:`unspecified
-      ~nVRAM:[]
+      ~nVRAM:[] ~last_booted_record:"" ~last_boot_CPU_flags:[] ~power_state:`Halted
   in
   let uuid = Client.VM.get_uuid rpc session_id vm in
   printer (Cli_printer.PList [uuid])
