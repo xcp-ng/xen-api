@@ -5760,7 +5760,10 @@ let tunnel_create printer rpc session_id params =
   let pif =
     Client.PIF.get_by_uuid rpc session_id (List.assoc "pif-uuid" params)
   in
-  let tunnel = Client.Tunnel.create rpc session_id pif network in
+  let protocol = Record_util.tunnel_protocol_of_string (
+    List.assoc_opt "protocol" params |> Option.value ~default:"gre"
+  ) in
+  let tunnel =  Client.Tunnel.create rpc session_id pif network protocol in
   let pif' = Client.Tunnel.get_access_PIF rpc session_id tunnel in
   let uuid = Client.PIF.get_uuid rpc session_id pif' in
   printer (Cli_printer.PList [uuid])
