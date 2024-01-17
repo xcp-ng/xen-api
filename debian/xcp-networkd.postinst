@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -e
+
+. /usr/share/debconf/confmodule
+
+if [ "${1}" = "configure" ] ; then
+	db_get xcp-xapi/networking_type
+	NETWORK_TYPE=${RET}
+	db_stop
+
+	echo ${NETWORK_TYPE} > /etc/xcp/network.conf
+fi
+
+#DEBHELPER#
+
+exit 0

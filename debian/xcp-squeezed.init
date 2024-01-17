@@ -1,0 +1,85 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          xcp-squeezed
+# Required-Start:    $remote_fs $syslog xen
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Squeeze daemon, coordinating ballooning amongst xen guests
+# Description:       This daemon controls the requests for xen guests to balloon,
+#                    coordinating the requests amongst the domains. 
+### END INIT INFO
+
+# Author: Jon Ludlam <jonathan.ludlam@eu.citrix.com>
+# & Thomas Goirand <zigo@debian.org>
+# Released under the LGPL 2.1
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="XCP Squeeze ballooning daemon"
+NAME=squeezed
+DAEMON=/usr/sbin/${NAME}
+PIDFILE=/var/run/xcp-${NAME}.pid
+DAEMON_ARGS="-daemon -pidfile ${PIDFILE}"
+SCRIPTNAME=/etc/init.d/${NAME}
+
+# Exit if the package is removed but not purged
+[ -x "${DAEMON}" ] || exit 0
+
+# Exit if we are not in dom0
+grep hypervisor /proc/cpuinfo > /dev/null || exit 0
+
+# Read configuration variable file if it is present
+[ -r /etc/default/${NAME} ] && . /etc/default/${NAME}
+
+# Load the VERBOSE setting and other rcS variables
+[ -r /lib/init/vars.sh ] && . /lib/init/vars.sh
+
+. /lib/lsb/init-functions
+
+case "${1}" in
+start)
+	[ "${VERBOSE}" != no ] && log_daemon_msg "Starting ${DESC}" "${NAME}"
+	start-stop-daemon --start --quiet --pidfile ${PIDFILE} --exec ${DAEMON} --test > /dev/null
+	if [ $? != 0 -a $? != 1 ] ; then
+		[ "${VERBOSE}" != no ] && log_end_msg 1
+		exit 1
+	fi
+	start-stop-daemon --start --quiet --pidfile ${PIDFILE} --exec ${DAEMON} -- ${DAEMON_ARGS}
+	if [ $? != 0 -a $? != 1 ] ; then
+		[ "${VERBOSE}" != no ] && log_end_msg 1
+		exit 1
+	else
+		[ "${VERBOSE}" != no ] && log_end_msg 0
+	fi
+;;
+stop)
+	[ "${VERBOSE}" != no ] && log_daemon_msg "Stopping ${DESC}" "${NAME}"
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile ${PIDFILE} --name ${NAME}
+	RETVAL=$?
+	if [ ${RETVAL} != 0 -a ${RETVAL} != 1 ] ; then
+		[ "${VERBOSE}" != no ] && log_end_msg 1
+		exit 1
+	fi
+	rm -f ${PIDFILE}
+	[ "${VERBOSE}" != no ] && log_end_msg 0
+;;
+status)
+	status_of_proc "${DAEMON}" "${NAME}" && exit 0 || exit $?
+;;
+#reload)
+#	log_daemon_msg "Reloading ${DESC}" "${NAME}"
+#	start-stop-daemon --stop --signal 1 --quiet --pidfile ${PIDFILE} --name ${NAME}
+#	log_end_msg $?
+#;;
+restart|force-reload)
+	${0} stop
+	sleep 1
+	${0} start
+;;
+*)
+	echo "Usage: ${0} {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+exit 0

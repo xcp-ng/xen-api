@@ -1,0 +1,76 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          xcp-v6d
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: V6d licensing daemon
+# Description:       The licensing daemon used as part of xenserver. Here temporarily
+### END INIT INFO
+
+# Author: Jon Ludlam <jonathan.ludlam@eu.citrix.com>
+# & Thomas Goirand <zigo@debian.org>
+# Licensed under LGPL 2.1
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+DESC="V6d licensing daemon"
+NAME=v6d
+DAEMON=/usr/sbin/${NAME}
+PIDFILE=/var/run/${NAME}.pid
+DAEMON_ARGS="-daemon -pidfile ${PIDFILE}"
+SCRIPTNAME=/etc/init.d/${NAME}
+
+[ -x "${DAEMON}" ] || exit 0
+
+# Load the VERBOSE setting and other rcS variables
+[ -r /lib/init/vars.sh ] && . /lib/init/vars.sh
+
+. /lib/lsb/init-functions
+
+case "$1" in
+start)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null
+	RET=$?
+	if ! [ ${RET} = 0 -o ${RET} = 1 ] ; then
+		[ "$VERBOSE" != no ] && log_end_msg 1
+		exit 1
+	fi
+	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_ARGS
+	if [ $? != 0 -a $? != 1 ] ; then
+		[ "$VERBOSE" != no ] && log_end_msg 1
+		exit 1
+	else
+		[ "$VERBOSE" != no ] && log_end_msg 0
+	fi
+;;
+stop)
+	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
+	if [ $? = 0 -o $? = 1 ] ; then
+		[ "$VERBOSE" != no ] && log_end_msg 0
+		rm -f ${PIDFILE}
+	else
+		[ "$VERBOSE" != no ] && log_end_msg 1
+		exit 1
+	fi
+;;
+status)
+	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+;;
+#reload|force-reload)
+#	start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
+#;;
+restart|force-reload)
+	${0} stop
+	${0} start
+;;
+*)
+	echo "Usage: $0 {start|stop|status|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+exit 0

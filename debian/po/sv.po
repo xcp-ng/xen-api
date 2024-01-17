@@ -1,0 +1,50 @@
+# Translation of xen-api debconf template to Swedish
+# Copyright (C) 2012 Martin Bagge <brother@bsnet.se>
+# This file is distributed under the same license as the xen-api package.
+#
+# Martin Bagge <brother@bsnet.se>, 2012
+msgid ""
+msgstr ""
+"Project-Id-Version: xen-api\n"
+"Report-Msgid-Bugs-To: xen-api@packages.debian.org\n"
+"POT-Creation-Date: 2012-03-26 07:24+0200\n"
+"PO-Revision-Date: 2012-04-10 18:36+0100\n"
+"Last-Translator: Martin Bagge / brother <brother@bsnet.se>\n"
+"Language-Team: Swedish <debian-l10n-swedish@lists.debian.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Swedish\n"
+"X-Poedit-Country: Sweden\n"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "XCP networking manager:"
+msgstr "XCP Nätverkshantering:"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"The xcp-networkd daemon supports two network backends: standard Linux "
+"bridging and Open vSwitch."
+msgstr ""
+"Tjänsten xcp-networkd har stöd för två nätverksbakdelar; standard linux-"
+"brygga och Open vSwitch."
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"While both modes support a similar feature set, Open vSwitch provides "
+"additional features such as QoS, monitoring, and control using the OpenFlow "
+"protocol. These additional features are not controlled directly through the "
+"XenAPI, but can instead be enabled and controlled through the ovs-* suite of "
+"commands."
+msgstr ""
+"Båda stöder ungefär samma funktioner men Open vSwitch stöder några extra "
+"funktioner som QoS, övervakning och kontroll genom OpenFlow-protokollet. "
+"Dessa extra funktioner kontrolleras inte direkt genom XenAPI:t utan kan "
+"istället aktiveras och kontrolleras genom uppsättningen med ovs-*-kommandon."

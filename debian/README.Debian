@@ -1,0 +1,375 @@
+XCP-XAPI for Debian author's notes
+----------------------------------
+
+This is the XCP toolstack ported to Debian. Installing these packages will turn
+a Debian system into an XCP virtualization host. While we aim to be
+functionally equivalent to a standard XCP system, not all features are
+currently ported to Debian.
+
+ -- Jon Ludlam <jonathan.ludlam@eu.citrix.com>  Thu, 07 Jul 2011 21:50:18 +0100
+
+Deciding whether to use XCP - XAPI
+----------------------------------
+
+XCP-XAPI has a rigid structure.  If you install and use this
+virtualisation suite, it must completely take over your physical machine
+in various ways.
+
+In particular, you should be aware of the following:
+
+* xcp-networkd manages your host network.  You can no longer set
+  IP addresses and routing using other mechanisms such as
+  /etc/network/interfaces.  xcp-networkd doesn't support all the
+  things you may implement in a normal host.
+* The storage system wants your raw disks.  It does NOT use your
+  existing LVM PV or VG, rather, it needs to create it's own PV,
+  VG and LVs on demand.  If you do tell it to work within an LV
+  that you have created, it will use the LV as a PV, and
+  you will end up with a nested VG.
+
+That said, you still have significant discretion to customise
+the dom0 environment in some ways, just keep away from the
+things that the XCP infrastructure wants to control.
+
+If you don't like this approach and want fine grained control of
+network addresses, bridging and firewalling, consider using the 
+XL toolstack instead of XCP.
+
+On the other hand, the benefit of this rigidity is that you
+can quickly build a system that supports scaling, XenMotion and other
+enterprise paradigms.
+
+Quick setup and howto
+---------------------
+0/ Important notes
+------------------
+In this howto, we will pretend that you'll be setting-up a server called
+node1234 with IP address 12.34.56.78. Obviously, the reader will adapt and
+replace these values to match his own configuration.
+
+Before we start, remember that many "xe" commands are simply outputing a UUID
+uppon success. This UUID can later be used as a unique reference for the object
+that we are talking about. For example, a VM (Virtual Machine) has a UUID, but
+so does a compute node, its network (bridge), its physical network interface,
+a virtual machine network interface, a storage repository, an iso image, etc.
+
+When we write:
+NETWORK=$(xe network-list bridge=xenbr0 --minimal)
+
+that means we want the $NETWORK shell script variable to contain the UUID of
+the network attached to our xenbr0, but you could also type:
+
+xe network-list bridge=xenbr0
+
+and copy/paste the information somewhere for later use as well.
+
+1/ Install Debian Wheezy
+------------------------
+Install Debian Wheezy on your machine. Make sure you use LVM, and leave enough
+free space on the VG to be able to host VMs. What I use is a 2GB RAID1 rootfs
+on 2 disks, then a 990 GB RAID10 array on which I have LVM as a host for swap
+(1GB), usr (8 to 16 GB), var (the amount of RAM + 4GB), tmp (1GB).
+
+Important note: For performance reasons, it is recommended to use a 32 bits
+dom0 kernel (with of course a 32 bits userland OS), and a 64 bits hypervisor
+(yes, the amd64 version of the hypervisor is also installable if you install a
+32 bits Debian).
+
+Also, make sure you install the 686-bigmem (otherwised called as -pae in SID),
+if you want your dom0 to be able to run on more than 1GB.
+
+2/ Install Xen and XCP
+----------------------
+2.1/ Installing XCP itself.
+You can just do:
+
+apt-get install xcp-xapi
+
+If you have installation of Recommended packages activated, then it will pull
+all the necessary. Otherwise, you might want to do:
+
+apt-get install xcp-xapi xcp-vncterm xcp-guest-templates \
+    linux-headers-686-pae bridge-utils qemu-keymaps qemu-utils libc6-xen
+
+2.2/ Set default Toolstack
+Switch to using xapi instead of xm or xend to control Xen, you do that with the
+following:
+
+sed -i "s/TOOLSTACK=.*/TOOLSTACK=xapi/" /etc/default/xen
+
+2.3/ Samba or NFS
+With XCP you can boot guests on iso images. To do that, you will need to use
+special iso SR (XCP uses Storage Repositories, or SR), for iso images. The .iso
+images can be stored either using NFS or Samba. So you should install support
+for one of them if you plan booting on iso images. Note that you can still
+install Debian guests without using an iso SR.
+
+apt-get install cifs-utils
+
+Applyling the following samba configuration in /etc/samba/smb.conf will serve
+these images in the folder /iso-images:
+
+[isoimg]
+        comment = XCP iso image SR
+        writable = no
+        path = /iso-images
+        public = yes
+        browseable = yes
+        guest ok = yes
+
+2.4/ Bash completion
+Since you'll be using xe, I would highly recommend that you install
+bash-completion as well. The xcp-xe package contains a
+/etc/bash_completion.d/xe file with all the commands. So do:
+
+apt-get install bash-completion
+
+and uncomment the use of it in /etc/bash.bashrc so that everyone in the
+system may use completion.
+
+2.5/ Reboot
+Reboot and choose XEN 4.1-amd64 in the grub menu. To ensure Xen is running you
+can do the following:
+
+cat /proc/xen/capabilities
+
+If everything is working correctly this should output "control_d". To check if
+xapi is running:
+
+/etc/init.d/xcp-xapi status
+
+This should output "[ ok ] xapi is running.".
+
+3/ Configuring Xen and XCP
+--------------------------
+3.1/ Configure network to use a bridge xenbr0
+
+You need to deliberately clobber your interfaces file like so:
+
+cp -n /etc/network/interfaces /etc/network/interfaces.bak-xcp
+cat > /etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+EOF
+
+Note that you will need to be running Xen and have xe as your TOOLSTACK (see
+2.2) to be able to execute xe and configure your network:
+
+PIF_UUID=$(xe pif-list device=eth0 --minimal)
+xe pif-reconfigure-ip mode=static DNS=1.2.3.4 \
+	ip=12.34.56.78 netmask=255.255.255.0 gateway=12.34.56.1 \
+	uuid=$PIF_UUID
+
+Note that it will survive reboots. If you use dhcp, then simply use:
+
+PIF_UUID=$(xe pif-list device=eth0)
+xe pif-reconfigure-ip uuid=$PIF_UUID mode=dhcp
+
+Note that if you are using openvswitch together with XCP, and the xcp-networkd
+daemon, it is overly important that you do setup your xenbr0 as per above,
+because otherwise, you will loose all network connectivity on next reboot,
+as a xenbr0 interface will be setup automatically, and your eth0 will *not*
+be automatically set in the forwarding state (eg: it will stay disabled, which
+means no connectivity).
+
+If you intend to run XCP using Open vSwitch (that is, if your
+/etc/xcp/network.conf contains "openvswitch" and not "bridge), then you should
+tell XCP about your network configuration.
+
+If you want xe to listen on the public IP address, you will need to have your
+MANAGEMENT_INTERFACE variable set as the default bridge interface in the
+/etc/xcp/inventory file. Here is an example:
+
+lnx200-39:~# cat /etc/xcp/inventory
+BUILD_NUMBER='0'
+CURRENT_INTERFACES='xenbr0'
+CONTROL_DOMAIN_UUID='de90f922-8bd8-176e-ea9a-4efece397b73'
+MANAGEMENT_INTERFACE='xenbr0'
+INSTALLATION_UUID='7f4f3149-2e9d-7bb5-bb99-fd51420a8cd6'
+
+3.2/ Set Xen as default in GRUB
+Using deb package to move xen to boot first:
+
+dpkg-divert --divert /etc/grub.d/08_linux_xen --rename /etc/grub.d/20_linux_xen
+
+3.3/ Set dom0 Defaults
+Set reasonable defaults in /etc/default/grub for the dom0 RAM and Virtual
+Central Processing Units, and boot only from Xen:
+
+echo "
+# Start dom0 with 1024 MB of RAM
+GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=1024M,max:1024M"
+
+# Disable OS prober to prevent virtual machines on logical volumes from
+# appearing in the boot menu.
+GRUB_DISABLE_OS_PROBER=true
+" >>/etc/default/grub
+
+update-grub2 or dpkg-reconfigure grub-pc (the later is needed to check that
+you've installed Grub on both MBR of your freshly installed Debian anyway).
+
+4/ Setting-up storage repositories (SRs)
+4.1/ VM SR
+For your virtual machines, XCP uses storage repositories. To create a new
+one, you need a big block device on your server. For example, if you use
+LVM, you could do something like that to create it:
+
+lvcreate -L500G -n <name> <volume group>
+
+to create a 500 GB LVM, then tell XCP to use it:
+
+xe sr-create type=ext name-label=<volume group> \
+   device-config:device=/dev/mapper/<volume group>-<name>
+
+By default, this will print the new UUID of the SR, but you can also get it
+with:
+
+xe sr-list type=ext --minimal
+
+You should then attach it as the default for the pool of storage for XCP:
+
+SR=`xe sr-list type=ext --minimal`
+POOL=`xe pool-list --minimal`
+xe pool-param-set uuid=$POOL default-SR=$SR
+
+If later, you want to use that SR with openstack, you should also do:
+
+xe sr-param-set uuid=$SR other-config:i18n-key=local-storage
+
+this will, by default, use mkfs.ext3, so expect it to take some time
+if you gave xe sr-create a big partition.
+
+4.2/ ISO SR using samba
+If you have some ISO images that you want to use in your VMs, then you
+should export them through NFS or a samba share, then do as below for
+samba:
+
+/usr/lib/xcp/bin/xe-mount-iso-sr //12.23.34.45/isoimg -t cifs
+
+"isoimg" is of course here the name of the share Samba share (nothing unusual,
+right?).
+
+as like this for NFS:
+
+xe-mount-iso-sr nfs-server:/path/to/isos
+
+Once you've done that, you will be able to do:
+xe cd-list
+
+and see the list of available iso images. Note that there's some sort of
+caching, so it may take few seconds until "xe cd-list" shows the iso that you
+may have dropped in this share.
+
+Note that neither cifs-utils nor nfs-common are hard dependencies, so you may
+need to apt-get install these packages manually:
+
+apt-get install cifs-utils
+or
+apt-get install nfs-common
+
+5/ Using XCP: let the fun begins
+--------------------------------
+5.1/ Choosing a template
+Now that you have XCP up and running on your server, let's play and setup some
+virtual machines. You can list available VM templates with:
+
+xe template-list
+
+once you've done your choice, you will need to do something like this:
+
+TEMPLATE=$(xe template-list name-label="Debian Wheezy 7.0 (32-bit)" --minimal)
+
+Creating a VM instance may be done using:
+
+VM=$(xe vm-install template=$template new-name-label=debian)
+
+Note that if you have installed bash completion, then you can do:
+
+xe vm-install template=[ TAB ]
+
+to show the list of templates. You could use both a real template name, or
+its UUID.
+
+By using a template, all sorts of booting parameters will be set the correct
+way so you don't have to worry about them (eg: if your VM needs hardware
+virtualization, for example, or if we should use pygrub, etc.).
+
+5.2/ Configuration for our VM before it starts
+Get the UID of your xenbr0 network to use it when creating the vif below:
+
+NETWORK=$(xe network-list bridge=xenbr0 --minimal)
+
+And use it to attach a new virtual network interface to your VM:
+
+VIF=$(xe vif-create vm-uuid=$vm network-uuid=$NETWORK device=0)
+
+Tell the VM that we want to boot using a debian repo:
+
+xe vm-param-set uuid=$vm \
+   other-config:install-repository=http://ftp.uk.debian.org/debian
+
+Let's say you wanted to use an iso image rather than the ftp repository,
+which image would be in your iso SR (see above), then you could have done
+this way:
+
+xe vm-cd-add vm=windows cd-name=wheezy.iso device=3
+
+Before you start it, you can set its memory to 1GB:
+
+xe vm-memory-limits-set static-min=1024MiB static-max=1024MiB \
+   dynamic-min=1024MiB dynamic-max=1024MiB \
+   vm=$VM
+
+If you want to resize the HDD of a VM, you should first get the UUID
+of its VDI:
+
+xe vm-disk-list vm=$VM
+
+Then resize its VDI:
+
+xe vdi-resize uuid=<UUID-OF-THE-VDI> disk-size=10GiB
+
+5.3/ Cloning the newly created VM
+Since we've done quite some work, it could be possible to clone our virtual
+machine to later do another install:
+
+xe vm-clone new-name-label=wheezy-32-bits-1024mb vm=$VM
+
+5.4/ Life and death of a VM
+Finally start the VM:
+
+xe vm-start uuid=$VM
+
+And access its console:
+
+xe console vm=$VM
+
+When you're done with the VM, you can do:
+
+xe vm-shutdown uuid=$VM
+
+And if you want to completely get rid of the VM, we do:
+
+xe vm-destroy uuid=$VM
+
+5.5/ Acces to VM console
+For more information on the different options to acces your VM console:
+
+http://wiki.xen.org/wiki/Xen_Cloud_Platform:_Access_to_VM_console
+
+6/ Pool of servers
+------------------
+If you want to add a new machine in the pool, then:
+
+xe pool-join master-address=<ip-of-your-other-dom0> \
+   master-username=<username> master-password=<pass>
+
+7/ XCP with Openstack
+---------------------
+There's a (currently unfinished) howto available in the nova-xcp-plugins
+package.
+
+999/ Feedback
+-------------
+This quick howto was written by Thomas Goirand <zigo@debian.org>, please send
+me feedback, corrections and improvements!

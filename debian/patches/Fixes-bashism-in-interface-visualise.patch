@@ -1,0 +1,16 @@
+Description: Fixes bashism in xen-api/scripts/interface-visualise
+Author: Thomas Goirand <zigo@debian.org>
+Bug-Debian: http://bugs.debian.org/690710
+Forwarded: Sent upstream by email
+
+--- xen-api-1.3.2.orig/scripts/interface-visualise
++++ xen-api-1.3.2/scripts/interface-visualise
+@@ -16,7 +16,7 @@ for i in ${1:-/etc/sysconfig/network-scr
+ 
+     echo "$i" 1>&2
+     (
+-	source "$i"
++	. "$i"
+ 	if [ X"${XEMANAGED}" = "Xyes" ] ; then
+ 	    XEMANAGED="\nXE"
+ 	fi

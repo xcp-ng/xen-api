@@ -1,0 +1,16 @@
+Description: Fixes bashism in ocaml/xe-cli/rt/install-debian-pv.sh
+Author: Thomas Goirand <zigo@debian.org>
+Bug-Debian: http://bugs.debian.org/690612
+Forwarded: Sent to upstream by email
+
+--- xen-api-1.3.2.orig/ocaml/xe-cli/rt/install-debian-pv.sh
++++ xen-api-1.3.2/ocaml/xe-cli/rt/install-debian-pv.sh
+@@ -32,7 +32,7 @@ HOST=`xe host-list hostname=${HOSTNAME}
+ # Check the SR is visible from here
+ NUMPBDS=`xe pbd-list sr-uuid=${SRUUID} host=${HOST} --minimal | wc -w`
+ 
+-if [ "${NUMPBDS}" == "0" ]; then
++if [ "${NUMPBDS}" = "0" ]; then
+         echo "Cannot see requested storage from this host!"
+         exit 1
+ fi

@@ -1,0 +1,43 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: xen-api\n"
+"Report-Msgid-Bugs-To: xen-api@packages.debian.org\n"
+"POT-Creation-Date: 2012-03-26 07:24+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "XCP networking manager:"
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"The xcp-networkd daemon supports two network backends: standard Linux "
+"bridging and Open vSwitch."
+msgstr ""
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"While both modes support a similar feature set, Open vSwitch provides "
+"additional features such as QoS, monitoring, and control using the OpenFlow "
+"protocol. These additional features are not controlled directly through the "
+"XenAPI, but can instead be enabled and controlled through the ovs-* suite of "
+"commands."
+msgstr ""

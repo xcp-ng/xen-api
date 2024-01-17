@@ -1,0 +1,36 @@
+# Translation of xen-api debconf templates to French.
+# Copyright (C) 2012, French l10n team <debian-l10n-french@lists.debian.org>
+# This file is distributed under the same license as the xen-api package.
+# Thomas Vincent <thomas@vinc-net.fr>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xen-api\n"
+"Report-Msgid-Bugs-To: xen-api@packages.debian.org\n"
+"POT-Creation-Date: 2012-03-26 07:24+0200\n"
+"PO-Revision-Date: 2012-04-15 04:12+0800\n"
+"Last-Translator: Thomas Goirand <thomas@goirand.fr>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: \n"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "XCP networking manager:"
+msgstr "网路管理器 XCP :"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "The xcp-networkd daemon supports two network backends: standard Linux bridging and Open vSwitch."
+msgstr "xcp-networkd 的服务器支持两种网络形式：标准 Linux bridging 和 Open vSwitch。"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "While both modes support a similar feature set, Open vSwitch provides additional features such as QoS, monitoring, and control using the OpenFlow protocol. These additional features are not controlled directly through the XenAPI, but can instead be enabled and controlled through the ovs-* suite of commands."
+msgstr "两种模式支持相似的功能，open vSwitch提供更多的功能比如使用OpenFlow协议来QoS， 监测和控制。这些 不是直接通过 XenAPI受控制的，但是可以通过ovs-* 命令行来开启和控制。"
+

@@ -1,0 +1,14 @@
+--- a/scripts/pam.d-xapi
++++ b/scripts/pam.d-xapi
+@@ -1,4 +1,8 @@
+ #%PAM-1.0
+-auth       include     common-auth
+-account    include     common-auth
+-password   include     common-auth
++@include common-auth
++
++# Uncomment this line to allow users of group xapi to authenticate
++#auth sufficient pam_succeed_if.so user ingroup xapi
++
++# Only allow group root to authenticate, unless above line uncommented
++auth required pam_succeed_if.so user ingroup root

@@ -1,0 +1,50 @@
+# Debconf translations for xen-api.
+# Copyright (C) 2012 THE xen-api'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the xen-api package.
+# Adriano Rafael Gomes <adrianorg@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: xen-api\n"
+"Report-Msgid-Bugs-To: xen-api@packages.debian.org\n"
+"POT-Creation-Date: 2012-03-26 07:24+0200\n"
+"PO-Revision-Date: 2012-04-04 03:23-0300\n"
+"Last-Translator: Adriano Rafael Gomes <adrianorg@gmail.com>\n"
+"Language-Team: Brazilian Portuguese <debian-l10n-portuguese@lists.debian."
+"org>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid "XCP networking manager:"
+msgstr "Gerenciador de rede XCP:"
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"The xcp-networkd daemon supports two network backends: standard Linux "
+"bridging and Open vSwitch."
+msgstr ""
+"O daemon xcp-networkd oferece suporte a dois mecanismos de rede: \"bridging"
+"\" Linux padrão e Open vSwitch."
+
+#. Type: select
+#. Description
+#: ../xcp-networkd.templates:2001
+msgid ""
+"While both modes support a similar feature set, Open vSwitch provides "
+"additional features such as QoS, monitoring, and control using the OpenFlow "
+"protocol. These additional features are not controlled directly through the "
+"XenAPI, but can instead be enabled and controlled through the ovs-* suite of "
+"commands."
+msgstr ""
+"Embora ambos os modos deem suporte a um conjunto similar de recursos, o Open "
+"vSwitch fornece recursos adicionais, tais como QoS, monitoramento e controle "
+"usando o protocolo OpenFlow. Esses recursos adicionais não são controlados "
+"diretamente através da XenAPI mas, ao invés disso, podem ser habilitados e "
+"controlados através da suíte de comandos ovs-*."
