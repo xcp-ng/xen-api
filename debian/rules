@@ -4,18 +4,34 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+# This gives us OCAML_STDLIB_DIR
+include /usr/share/ocaml/ocamlvars.mk
+
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
 export PLATFORM_NAME="XCP_Kronos"
 export PLATFORM_VERSION="1.6.0"
 
+export COMPILE_JAVA=no
+
 %:
-	dh $@ --with ocaml,python2
+	dh $@ --with ocaml,python3
 
 clean: 
 	dh clean
 	find . -name "*.omc" | xargs rm
+
+# ./configure --xenopsd_libexecdir %{_libexecdir}/xenopsd --qemu_wrapper_dir=%{_libdir}/xen/bin --sbindir=%{_sbindir} --mandir=%{_mandir} --bindir=%{_bindir} --xapi_version=%{version} --prefix %{_prefix} --libdir %{ocaml_libdir}
+override_dh_auto_configure:
+	./configure \
+		-verbose \
+		--prefix=/usr \
+		--libdir=$(OCAML_STDLIB_DIR)
+
+# make
+# make doc
+# make sdk
 
 override_dh_installinit:
 	dh_installinit -pxcp-xapi -- defaults 23
@@ -23,6 +39,6 @@ override_dh_installinit:
 	dh_installinit -pxcp-v6d -- defaults 20
 	dh_installinit -pxcp-networkd -- defaults 20
 
-override_dh_python2:
-	dh_python2
-	dh_python2 /usr/lib/xcp
+override_dh_python3:
+	dh_python3
+	dh_python3 /usr/lib/xcp

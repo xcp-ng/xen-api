@@ -3,7 +3,7 @@ Section: admin
 Priority: extra
 Maintainer: Pkg Xen <pkg-xen-devel@lists.alioth.debian.org>
 Uploaders: Jon Ludlam <jonathan.ludlam@eu.citrix.com>, Thomas Goirand <zigo@debian.org>, Mike McClurg <mike.mcclurg@citrix.com>
-Build-Depends: debhelper (>= 8.0.0), dh-autoreconf, dh-ocaml, ocaml-native-compilers, ocaml-findlib, camlp4, camlp4-extra, autotools-dev, libtype-conv-camlp4-dev, libxmlm-ocaml-dev, uuid-dev, libxcp-ocaml, libxcp-ocaml-dev, omake, libxen-ocaml-dev, libxen-ocaml, libpam-dev, zlib1g-dev, xen-utils, libxen-dev, libounit-ocaml-dev, python-all (>= 2.6.6-3~), po-debconf
+Build-Depends: debhelper (>= 8.0.0), dh-autoreconf, dh-ocaml, ocaml-native-compilers, ocaml-findlib, camlp4, camlp4-extra, autotools-dev, libtype-conv-camlp4-dev, libxmlm-ocaml-dev, uuid-dev, omake, libxen-ocaml-dev, libxen-ocaml, libpam-dev, zlib1g-dev, xen-utils, libxen-dev, libounit-ocaml-dev, python3-dev, po-debconf, libdlm-dev, libgmp-dev, libffi-dev, libssl-dev, libpci-dev, libsystemd-dev, libxxhash-dev
 Standards-Version: 3.9.3.1
 Homepage: http://www.xen.org/products/cloudxen.html
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-xen/xen-api.git
