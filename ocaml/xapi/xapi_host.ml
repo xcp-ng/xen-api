@@ -1221,16 +1221,7 @@ let syslog_reconfigure ~__context ~host:_ =
   ()
 
 let get_management_interface ~__context ~host =
-  let pifs =
-    Db.PIF.get_refs_where ~__context
-      ~expr:
-        (And
-           ( Eq (Field "host", Literal (Ref.string_of host))
-           , Eq (Field "management", Literal "true")
-           )
-        )
-  in
-  match pifs with [] -> raise Not_found | pif :: _ -> pif
+  Helpers.get_management_interface ~__context ~host
 
 let change_management_interface ~__context interface primary_address_type =
   debug "Changing management interface" ;
@@ -3045,10 +3036,15 @@ let set_https_only ~__context ~self ~value =
   let state = match value with true -> "close" | false -> "open" in
   match cc_prep () with
   | false ->
+      let options =
+        match Helpers.get_management_iface_primary_address_type ~__context with
+        | `IPv4 ->
+            [state; "80"]
+        | `IPv6 ->
+            ["-6"; state; "80"]
+      in
       ignore
-      @@ Helpers.call_script
-           !Xapi_globs.firewall_port_config_script
-           [state; "80"] ;
+      @@ Helpers.call_script !Xapi_globs.firewall_port_config_script options ;
       Db.Host.set_https_only ~__context ~self ~value
   | true when value = Db.Host.get_https_only ~__context ~self ->
       (* the new value is the same as the old value *)

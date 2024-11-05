@@ -150,6 +150,18 @@ let get_management_ip_addr ~__context =
   let dbg = Context.string_of_task __context in
   Option.map fst (Networking_info.get_management_ip_addr ~dbg)
 
+let get_management_interface ~__context ~host =
+  let pifs =
+    Db.PIF.get_refs_where ~__context
+      ~expr:
+        (And
+           ( Eq (Field "host", Literal (Ref.string_of host))
+           , Eq (Field "management", Literal "true")
+           )
+        )
+  in
+  match pifs with [] -> raise Not_found | pif :: _ -> pif
+
 let get_localhost_uuid () =
   Xapi_inventory.lookup Xapi_inventory._installation_uuid
 
@@ -164,6 +176,11 @@ let get_localhost ~__context =
       localhost_ref
   | true ->
       get_localhost_uncached ~__context
+
+let get_management_iface_primary_address_type ~__context =
+  let host = get_localhost ~__context in
+  let management_pif = get_management_interface ~__context ~host in
+  Db.PIF.get_primary_address_type ~__context ~self:management_pif
 
 (* Determine the gateway and DNS PIFs:
  * If one of the PIFs with IP has other_config:defaultroute=true, then
