@@ -288,7 +288,8 @@ module Daemon = struct
           options ;
         maybe_call_script ~__context !Xapi_globs.systemctl ["enable"; service] ;
         maybe_call_script ~__context !Xapi_globs.systemctl ["start"; service]
-      with _ ->
+      with e ->
+        warn (Printexc.to_string e) ;
         raise
           Api_errors.(
             Server_error
