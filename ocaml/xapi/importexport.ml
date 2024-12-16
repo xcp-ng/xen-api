@@ -428,9 +428,17 @@ let sr_of_req ~__context (req : Http.Request.t) =
     None
 
 module Format = struct
-  type t = Raw | Vhd | Tar
+  type t = Raw | Vhd | Tar | Qcow
 
-  let to_string = function Raw -> "raw" | Vhd -> "vhd" | Tar -> "tar"
+  let to_string = function
+    | Raw ->
+        "raw"
+    | Vhd ->
+        "vhd"
+    | Tar ->
+        "tar"
+    | Qcow ->
+        "qcow2"
 
   let of_string x =
     match String.lowercase_ascii x with
@@ -440,6 +448,8 @@ module Format = struct
         Some Vhd
     | "tar" ->
         Some Tar
+    | "qcow2" ->
+        Some Qcow
     | _ ->
         None
 
@@ -455,6 +465,8 @@ module Format = struct
         "application/vhd"
     | Tar ->
         "application/x-tar"
+    | Qcow ->
+        "application/x-qemu-disk"
 
   let _key = "format"
 
