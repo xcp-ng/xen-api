@@ -1377,3 +1377,6 @@ let telemetry_next_collection_too_late =
 let illegal_in_fips_mode = add_error "ILLEGAL_IN_FIPS_MODE"
 
 let too_many_groups = "TOO_MANY_GROUPS"
+
+let unimplemented_in_qcow_tool_wrapper =
+  add_error "UNIMPLEMENTED_IN_QCOW_TOOL_WRAPPER"

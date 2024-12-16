@@ -47,11 +47,14 @@ let localhost_handler rpc session_id vdi (req : Http.Request.t)
           let copy base_path path size =
             try
               debug "Copying VDI contents..." ;
-              Vhd_tool_wrapper.send ?relative_to:base_path
-                (Vhd_tool_wrapper.update_task_progress __context)
-                "none"
-                (Importexport.Format.to_string format)
-                s path size "" ;
+              if format = Qcow then
+                Qcow_tool_wrapper.unimplemented ()
+              else
+                Vhd_tool_wrapper.send ?relative_to:base_path
+                  (Vhd_tool_wrapper.update_task_progress __context)
+                  "none"
+                  (Importexport.Format.to_string format)
+                  s path size "" ;
               debug "Copying VDI complete."
             with Unix.Unix_error (Unix.EIO, _, _) ->
               raise
@@ -73,6 +76,8 @@ let localhost_handler rpc session_id vdi (req : Http.Request.t)
             in
             Http_svr.headers s headers ;
             match format with
+            | Qcow ->
+                Qcow_tool_wrapper.unimplemented ()
             | Raw | Vhd ->
                 let size = Db.VDI.get_virtual_size ~__context ~self:vdi in
                 if format = Vhd && size > Constants.max_vhd_size then
