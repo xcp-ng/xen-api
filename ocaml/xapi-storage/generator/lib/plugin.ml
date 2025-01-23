@@ -18,6 +18,9 @@ type query_result = {
         (** Key/description pairs describing required device_config parameters. *)
   ; required_cluster_stack: string list
         (** The plugin requires one of these cluster stacks to be active. *)
+  ; supported_image_formats: string list
+        (** List of image formats (VHD, RAW, Qcow2, ...) supported by an
+            SR.type. *)
 }
 [@@deriving rpcty]
 
