@@ -250,6 +250,7 @@ module CreateSMObject = Generic.MakeStateful (struct
       ; configuration= []
       ; required_cluster_stack= []
       ; smapi_version= SMAPIv2
+      ; supported_image_formats= []
       }
 
   let extract_output __context _ =

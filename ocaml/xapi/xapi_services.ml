@@ -255,6 +255,7 @@ let get_handler (req : Http.Request.t) s _ =
             ; configuration= []
             ; required_cluster_stack= []
             ; smapi_version= SMAPIv2
+            ; supported_image_formats= []
             }
           in
           respond req (Storage_interface.(rpc_of query_result) q) s

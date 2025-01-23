@@ -31,6 +31,7 @@ let register_smapiv2_server (module S : Storage_interface.Server_impl) sr_ref =
       ; configuration= []
       ; required_cluster_stack= []
       ; smapi_version= SMAPIv2
+      ; supported_image_formats= []
       }
   in
 
