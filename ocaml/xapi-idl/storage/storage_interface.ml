@@ -477,6 +477,7 @@ type query_result = {
   ; configuration: (string * string) list
   ; required_cluster_stack: string list
   ; smapi_version: smapi_version
+  ; supported_image_formats: string list
 }
 [@@deriving rpcty]
 
@@ -687,9 +688,9 @@ module StorageAPI (R : RPC) = struct
       declare "SR.destroy" [] (dbg_p @-> sr_p @-> returning unit_p err)
 
     (** [scan task sr] returns a list of VDIs contained within an attached SR.
-    @deprecated This function is deprecated, and is only here to keep backward 
-    compatibility with old xapis that call Remote.SR.scan during SXM. 
-    Use the scan2 function instead. 
+    @deprecated This function is deprecated, and is only here to keep backward
+    compatibility with old xapis that call Remote.SR.scan during SXM.
+    Use the scan2 function instead.
     *)
     let scan =
       let open TypeCombinators in
@@ -1081,7 +1082,7 @@ module StorageAPI (R : RPC) = struct
         @-> returning status_p err
         )
 
-    (** [import_activate dbg dp sr vdi vm] returns a server socket address to 
+    (** [import_activate dbg dp sr vdi vm] returns a server socket address to
       which a fd can be passed via SCM_RIGHTS for mirroring purposes.*)
     let import_activate =
       declare "DATA.import_activate" []
@@ -1095,7 +1096,7 @@ module StorageAPI (R : RPC) = struct
 
     (** [get_nbd_server dbg dp sr vdi vm] returns the address of a generic nbd
       server that can be connected to. Depending on the backend, this will either
-      be a nbd server backed by tapdisk or qemu-dp. Note this is different 
+      be a nbd server backed by tapdisk or qemu-dp. Note this is different
       from [import_activate] as the returned server does not accept fds. *)
     let get_nbd_server =
       declare "DATA.get_nbd_server" []
@@ -1116,9 +1117,9 @@ module StorageAPI (R : RPC) = struct
 
       let id_p = Param.mk ~name:"id" Mirror.id
 
-      (** [send_start dbg dp task src_sr vdi mirror_vm mirror_id local_vdi copy_vm 
+      (** [send_start dbg dp task src_sr vdi mirror_vm mirror_id local_vdi copy_vm
       live_vm url remote_mirror dest_sr verify_dest]
-      takes the remote mirror [remote_mirror] prepared by the destination host 
+      takes the remote mirror [remote_mirror] prepared by the destination host
       and initiates the mirroring of [vdi] from the source *)
       let send_start =
         let recv_result_p =
@@ -1145,10 +1146,10 @@ module StorageAPI (R : RPC) = struct
           @-> returning unit_p err
           )
 
-      (** Called on the receiving end 
-        @deprecated This function is deprecated, and is only here to keep backward 
-        compatibility with old xapis that call Remote.DATA.MIRROR.receive_start during SXM. 
-        Use the receive_start3 function instead. 
+      (** Called on the receiving end
+        @deprecated This function is deprecated, and is only here to keep backward
+        compatibility with old xapis that call Remote.DATA.MIRROR.receive_start during SXM.
+        Use the receive_start3 function instead.
       *)
       let receive_start =
         let similar_p = Param.mk ~name:"similar" Mirror.similars in
@@ -1162,10 +1163,10 @@ module StorageAPI (R : RPC) = struct
           @-> returning result err
           )
 
-      (** Called on the receiving end 
-        @deprecated This function is deprecated, and is only here to keep backward 
-        compatibility with old xapis that call Remote.DATA.MIRROR.receive_start2 during SXM. 
-        Use the receive_start3 function instead. 
+      (** Called on the receiving end
+        @deprecated This function is deprecated, and is only here to keep backward
+        compatibility with old xapis that call Remote.DATA.MIRROR.receive_start2 during SXM.
+        Use the receive_start3 function instead.
       *)
       let receive_start2 =
         let similar_p = Param.mk ~name:"similar" Mirror.similars in
@@ -1197,26 +1198,26 @@ module StorageAPI (R : RPC) = struct
           @-> returning result err
           )
 
-      (** Called on the receiving end 
-        @deprecated This function is deprecated, and is only here to keep backward 
+      (** Called on the receiving end
+        @deprecated This function is deprecated, and is only here to keep backward
         compatibility with old xapis that call Remote.DATA.MIRROR.receive_finalize
-        during SXM.  Use the receive_finalize3 function instead. 
+        during SXM.  Use the receive_finalize3 function instead.
       *)
       let receive_finalize =
         declare "DATA.MIRROR.receive_finalize" []
           (dbg_p @-> id_p @-> returning unit_p err)
 
-      (** Called on the receiving end 
-        @deprecated This function is deprecated, and is only here to keep backward 
+      (** Called on the receiving end
+        @deprecated This function is deprecated, and is only here to keep backward
         compatibility with old xapis that call Remote.DATA.MIRROR.receive_finalize2
-        during SXM.  Use the receive_finalize3 function instead. 
+        during SXM.  Use the receive_finalize3 function instead.
       *)
       let receive_finalize2 =
         declare "DATA.MIRROR.receive_finalize2" []
           (dbg_p @-> id_p @-> returning unit_p err)
 
-      (** [receive_finalize3 dbg id] will stop the mirroring process and compose 
-      the snapshot VDI with the mirror VDI. It also cleans up the storage resources 
+      (** [receive_finalize3 dbg id] will stop the mirroring process and compose
+      the snapshot VDI with the mirror VDI. It also cleans up the storage resources
       used by mirroring. It is called after the the source VM is paused. This fucntion
       should be used in conjunction with [receive_start3] *)
       let receive_finalize3 =
@@ -1231,9 +1232,9 @@ module StorageAPI (R : RPC) = struct
 
       (** [receive_cancel dbg id] is called in the case of migration failure to
       do the clean up.
-        @deprecated This function is deprecated, and is only here to keep backward 
+        @deprecated This function is deprecated, and is only here to keep backward
         compatibility with old xapis that call Remote.DATA.MIRROR.receive_cancel
-        during SXM.  Use the receive_cancel2 function instead. 
+        during SXM.  Use the receive_cancel2 function instead.
       *)
       let receive_cancel =
         declare "DATA.MIRROR.receive_cancel" []

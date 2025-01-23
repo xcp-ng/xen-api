@@ -937,6 +937,8 @@ module QueryImpl (M : META) = struct
         ; required_cluster_stack=
             response.Xapi_storage.Plugin.required_cluster_stack
         ; smapi_version= SMAPIv3
+        ; supported_image_formats=
+            response.Xapi_storage.Plugin.supported_image_formats
         }
     in
     wrap th
