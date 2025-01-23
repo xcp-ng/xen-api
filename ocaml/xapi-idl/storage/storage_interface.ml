@@ -415,6 +415,7 @@ type query_result = {
   ; features: string list
   ; configuration: (string * string) list
   ; required_cluster_stack: string list
+  ; supported_image_formats: string list
 }
 [@@deriving rpcty]
 
@@ -625,9 +626,9 @@ module StorageAPI (R : RPC) = struct
       declare "SR.destroy" [] (dbg_p @-> sr_p @-> returning unit_p err)
 
     (** [scan task sr] returns a list of VDIs contained within an attached SR.
-    @deprecated This function is deprecated, and is only here to keep backward 
-    compatibility with old xapis that call Remote.SR.scan during SXM. 
-    Use the scan2 function instead. 
+    @deprecated This function is deprecated, and is only here to keep backward
+    compatibility with old xapis that call Remote.SR.scan during SXM.
+    Use the scan2 function instead.
     *)
     let scan =
       let open TypeCombinators in
