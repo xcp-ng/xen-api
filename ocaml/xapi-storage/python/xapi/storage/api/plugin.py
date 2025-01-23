@@ -59,6 +59,11 @@ class Plugin_server_dispatcher:
         for tmp_3 in results['required_cluster_stack']:
             if not isinstance(tmp_3, str) and not isinstance(tmp_3, unicode):
                 raise TypeError("string", repr(tmp_3))
+        if not isinstance(results['supported_image_formats'], list):
+            raise TypeError("string list", repr(results['supported_image_formats']))
+        for tmp_4 in results['supported_image_formats']:
+            if not isinstance(tmp_4, str) and not isinstance(tmp_4, unicode):
+                raise TypeError("string", repr(tmp_4))
         return results
     def ls(self, args):
         """type-check inputs, call implementation, type-check outputs and return"""
@@ -118,7 +123,18 @@ class Plugin_test:
     def query(self, dbg):
         """Discover properties of this implementation. Every implementation  must support the query interface or it will not be recognised as  a storage plugin by xapi."""
         result = {}
-        result["query_result"] = { "plugin": "string", "name": "string", "description": "string", "vendor": "string", "copyright": "string", "version": "string", "required_api_version": "string", "features": [ "string", "string" ], "configuration": { "string": "string" }, "required_cluster_stack": [ "string", "string" ] }
+        result["query_result"] = {
+            "plugin": "string",
+            "name": "string",
+            "description": "string",
+            "vendor": "string",
+            "copyright": "string",
+            "version": "string",
+            "required_api_version": "string",
+            "features": [ "string", "string" ],
+            "configuration": {"string": "string" },
+            "required_cluster_stack": [ "string","string" ],
+            "supported_image_formats": [ "string", "string" ] }
         return result
     def ls(self, dbg):
         """Discover properties of this implementation. Every implementation  must support the query interface or it will not be recognised as  a storage plugin by xapi."""

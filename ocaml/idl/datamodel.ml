@@ -3479,6 +3479,10 @@ module SM = struct
             "required_cluster_stack"
             "The storage plugin requires that one of these cluster stacks is \
              configured and running."
+        ; field ~in_oss_since:None ~qualifier:DynamicRO
+            ~default_value:(Some (VSet [])) ~ty:(Set String)
+            "supported_image_formats"
+            "Image formats suported by the SR (VHD, RAW, Qcow2, ...)"
         ]
       ()
 end

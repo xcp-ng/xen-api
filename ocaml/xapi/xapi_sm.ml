@@ -36,7 +36,7 @@ let create_from_query_result ~__context q =
   if String.lowercase_ascii q.driver <> "storage_access" then (
     let features = Smint.parse_string_int64_features q.features in
     let capabilities = List.map fst features in
-    info "Registering SM plugin %s (version %s)"
+    info "Registering SM plugin %s (version %s) - create"
       (String.lowercase_ascii q.driver)
       q.version ;
     Db.SM.create ~__context ~ref:r ~uuid:u
@@ -47,6 +47,7 @@ let create_from_query_result ~__context q =
       ~configuration:q.configuration ~other_config:[]
       ~driver_filename:(Sm_exec.cmd_name q.driver)
       ~required_cluster_stack:q.required_cluster_stack
+      ~supported_image_formats:q.supported_image_formats
   )
 
 let update_from_query_result ~__context (self, r) q_result =
@@ -56,7 +57,7 @@ let update_from_query_result ~__context (self, r) q_result =
     let driver_filename = Sm_exec.cmd_name q_result.driver in
     let features = Smint.parse_string_int64_features q_result.features in
     let capabilities = List.map fst features in
-    info "Registering SM plugin %s (version %s)"
+    info "Registering SM plugin %s (version %s) - update"
       (String.lowercase_ascii q_result.driver)
       q_result.version ;
     if r.API.sM_type <> _type then
@@ -80,7 +81,10 @@ let update_from_query_result ~__context (self, r) q_result =
     if r.API.sM_configuration <> q_result.configuration then
       Db.SM.set_configuration ~__context ~self ~value:q_result.configuration ;
     if r.API.sM_driver_filename <> driver_filename then
-      Db.SM.set_driver_filename ~__context ~self ~value:driver_filename
+      Db.SM.set_driver_filename ~__context ~self ~value:driver_filename ;
+    if r.API.sM_supported_image_formats <> q_result.supported_image_formats then
+      Db.SM.set_supported_image_formats ~__context ~self
+        ~value:q_result.supported_image_formats
   )
 
 let is_v1 x = version_of_string x < [2; 0]
