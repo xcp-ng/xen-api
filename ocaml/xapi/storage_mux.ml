@@ -169,6 +169,7 @@ module Mux = struct
       ; features= []
       ; configuration= []
       ; required_cluster_stack= []
+      ; supported_image_formats= []
       }
 
     let diagnostics () ~dbg =
