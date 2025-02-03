@@ -365,7 +365,8 @@ let refresh_phypath_to_sr_vdi () =
 let exec_tap_ctl_list () : ((string * string) * int) list =
   let tap_ctl = "/usr/sbin/tap-ctl list" in
   let extract_vdis pid minor _state kind phypath =
-    if not (kind = "vhd" || kind = "aio") then raise (Failure "Unknown type") ;
+    if not (kind = "vhd" || kind = "aio" || kind = "qcow2") then
+      raise (Failure "Unknown type") ;
     (* Look up SR and VDI uuids from the physical path *)
     if not (Hashtbl.mem phypath_to_sr_vdi phypath) then
       refresh_phypath_to_sr_vdi () ;
