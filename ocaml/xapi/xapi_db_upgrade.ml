@@ -106,6 +106,10 @@ let jura =
   , Datamodel_common.jura_release_schema_minor_vsn
   )
 
+let quebec =
+  ( Datamodel_common.quebec_release_schema_major_vsn
+  , Datamodel_common.quebec_release_schema_minor_vsn )
+
 let yangtze =
   ( Datamodel_common.yangtze_release_schema_major_vsn
   , Datamodel_common.yangtze_release_schema_minor_vsn
@@ -904,6 +908,26 @@ let upgrade_update_guidance =
       )
   }
 
+let fill_tunnel_protocol =
+  {
+    description=
+      "Fill up the new field protocol of a Tunnel"
+  ; version= (fun x -> x <= quebec)
+  ; fn=
+      (fun ~__context ->
+        Db.Tunnel.get_all ~__context
+        |> List.iter (fun self ->
+          let pif = Db.Tunnel.get_access_PIF ~__context ~self in
+          let network = Db.PIF.get_network ~__context ~self:pif in
+          let other_config = Db.Network.get_other_config ~__context ~self:network in
+          let encapsulation = List.assoc_opt "xo:sdn-controller:encapsulation" other_config
+            |> Option.value ~default:"gre" in
+          let value = Record_util.tunnel_protocol_of_string encapsulation in
+          Db.Tunnel.set_protocol ~__context ~self ~value
+        )
+      )
+  }
+
 let rules =
   [
     upgrade_domain_type
@@ -933,6 +957,7 @@ let rules =
   ; remove_legacy_ssl_support
   ; empty_pool_uefi_certificates
   ; upgrade_update_guidance
+  ; fill_tunnel_protocol
   ]
 
 (* Maybe upgrade most recent db *)
