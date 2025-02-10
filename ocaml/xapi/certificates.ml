@@ -278,14 +278,21 @@ end = struct
       (fun (self, record) ->
         let read_fingerprints filename =
           let ( let* ) = Result.bind in
-          let* certificate =
-            Xapi_stdext_unix.Unixext.string_of_file filename
-            |> Cstruct.of_string
-            |> X509.Certificate.decode_pem
-          in
-          let sha1 = pp_fingerprint ~hash_type:`SHA1 certificate in
-          let sha256 = pp_fingerprint ~hash_type:`SHA256 certificate in
-          Ok (sha1, sha256)
+          try
+            let* certificate =
+              Xapi_stdext_unix.Unixext.string_of_file filename
+              |> Cstruct.of_string
+              |> X509.Certificate.decode_pem
+            in
+            let sha1 = pp_fingerprint ~hash_type:`SHA1 certificate in
+            let sha256 = pp_fingerprint ~hash_type:`SHA256 certificate in
+            Ok (sha1, sha256)
+          with
+          | Unix.Unix_error (Unix.ENOENT, _, _) ->
+              Error
+                (`Msg (Printf.sprintf "filename %s does not exist" filename))
+          | exn ->
+              Error (`Msg (Printexc.to_string exn))
         in
         let filename =
           Filename.concat
