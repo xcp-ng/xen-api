@@ -1166,6 +1166,10 @@ let server_init () =
             , []
             , fun () -> report_tls_verification ~__context
             )
+          ; ( "Update shared certificate's metadata"
+            , [Startup.OnlyMaster]
+            , fun () -> Certificates.Db_util.upgrade_ca_fingerprints ~__context
+            )
           ; ( "Remote requests"
             , [Startup.OnThread]
             , Remote_requests.handle_requests

@@ -83,4 +83,6 @@ module Db_util : sig
     -> API.ref_Certificate list
 
   val get_ca_certs : __context:Context.t -> API.ref_Certificate list
+
+  val upgrade_ca_fingerprints : __context:Context.t -> unit
 end
