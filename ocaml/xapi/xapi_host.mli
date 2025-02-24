@@ -502,3 +502,9 @@ val cleanup_pool_secret :
 
 val set_https_only :
   __context:Context.t -> self:API.ref_host -> value:bool -> unit
+
+val set_sched_gran :
+  __context:Context.t -> self:API.ref_host -> value:API.host_sched_gran -> unit
+
+val get_sched_gran :
+  __context:Context.t -> self:API.ref_host -> API.host_sched_gran
