@@ -49,6 +49,7 @@
    ezxenstore.core
    gencertlib
    ipaddr
+   magic-mime
    message-switch-unix
    mtime
    mtime.clock.os

@@ -44,41 +44,8 @@ let missing uri =
   ^ " was not found on this server.</p> <hr><address>Xapi \
      Server</address></body></html>"
 
-let get_extension filename =
-  try
-    let basename = Filename.basename filename in
-    let i = String.rindex basename '.' in
-    Some (String.sub basename (i + 1) (String.length basename - i - 1))
-  with _ -> None
-
-let application_octet_stream = "application/octet-stream"
-
-let mime_of_extension = function
-  | "html" | "htm" ->
-      "text/html"
-  | "css" ->
-      "text/css"
-  | "js" ->
-      "application/javascript"
-  | "gif" ->
-      "image/gif"
-  | "png" ->
-      "image/png"
-  | "jpg" | "jpeg" ->
-      "image/jpeg"
-  | "xml" ->
-      "application/xml"
-  | "rpm" ->
-      "application/x-rpm"
-  | _ ->
-      application_octet_stream
-
 let response_file s file_path =
-  let mime_content_type =
-    let open Stdext.Opt in
-    let ext = map String.lowercase_ascii (get_extension file_path) in
-    default application_octet_stream (map mime_of_extension ext)
-  in
+  let mime_content_type = Magic_mime.lookup file_path in
   Http_svr.response_file ~mime_content_type s file_path
 
 let is_external_http req s =
