@@ -170,15 +170,29 @@ module SR = struct
 
   let all_srs = lazy (list_srs_connected_to_localhost !A.rpc !session_id)
 
-  let all =
+  let all () =
     if !A.use_default_sr then
       let pool = Qt.get_pool !A.rpc !session_id in
       only
         (Client.Client.Pool.get_default_SR ~rpc:!A.rpc ~session_id:!session_id
            ~self:pool
         )
-    else
-      fun () -> Lazy.force all_srs
+        ()
+    else if !A.sr <> "" then (
+      let sr =
+        Client.Client.SR.get_by_uuid ~rpc:!A.rpc ~session_id:!session_id
+          ~uuid:!A.sr
+      in
+      let local_srs =
+        list_srs_connected_to_localhost !A.rpc !session_id
+        |> List.map (fun sr_info -> sr_info.Qt.sr)
+      in
+      if not (List.mem sr local_srs) then
+        failwith
+          (Printf.sprintf "Specified sr %s is not available on the host" !A.sr) ;
+      only sr ()
+    ) else
+      Lazy.force all_srs
 
   let random srs () =
     let srs = srs () in
