@@ -325,6 +325,7 @@ let tunnel_record rpc session_id tunnel =
           )
           ~get_map:(fun () -> (x ()).API.tunnel_other_config)
           ()
+      ; make_field ~name:"protocol" ~get:(fun () -> Record_util.tunnel_protocol_to_string (x ()).API.tunnel_protocol) ()
       ]
   }
 
