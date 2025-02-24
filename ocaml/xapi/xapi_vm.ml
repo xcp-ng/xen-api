@@ -1534,7 +1534,23 @@ let rec import_inner n ~__context ~url ~sr ~full_restore ~force =
             Cohttp.Request.Make (Cohttp_posix_io.Unbuffered_IO) in
           let module Response =
             Cohttp.Response.Make (Cohttp_posix_io.Unbuffered_IO) in
-          let request = Cohttp.Request.make ~meth:`GET uri in
+          let maybe_wrap_IPv6_literal addr =
+            if Unixext.domain_of_addr addr = Some Unix.PF_INET6 then
+              "[" ^ addr ^ "]"
+            else
+              addr
+          in
+          let headers = Cohttp.Header.init () in
+          let headers =
+            Cohttp.Header.add_unless_exists headers "host"
+              (match Uri.scheme uri with
+              | Some "httpunix" -> ""
+              | _ -> (
+                (maybe_wrap_IPv6_literal (Uri.host_with_default ~default:"localhost" uri))
+                  ^
+                  match Uri.port uri with Some p -> ":" ^ string_of_int p | None -> ""))
+          in
+          let request = Cohttp.Request.make ~meth:`GET ?headers:(Some headers) uri in
           let ic =
             {
               Cohttp_posix_io.Unbuffered_IO.header_buffer= None
