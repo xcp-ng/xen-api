@@ -48,14 +48,14 @@ to qcow-tool.
   - `GET /export_raw_vdi`
   - `PUT /import_raw_vdi`
 - The corresponding handlers are `Export_raw_vdi.handler` and `Import_raw_vdi.handler`.
-- As the format is checked in there handler we need to add support for `Qcow2` format, as currently
-only `Raw`, `Tar` and `Vhd` are supported.
-- Once the format is decoded, a wrapper `Vhd_tool_wrapper` is called to set up parameters for 
+- Since the format is checked in the handler, we need to add support for the `Qcow2` format,
+as currently only `Raw`, `Tar`, and `Vhd` are supported.
+- Once the format is decoded, a wrapper `Vhd_tool_wrapper` is called to set up parameters for
 `vhd-tool`.
   - We will add a new wrapper for `Qcow2` that instead calls the newly added `qcow-tool`
   (See section below).
   - `vhd-tool` streams data between the file and the unix file descriptor of the HTTP server.
-  We will need to implement a similar mechanism in `qcow-tool` 
+  We will need to implement a similar mechanism in `qcow-tool`
 
 ## Adding and modifying qcow-tool
 
