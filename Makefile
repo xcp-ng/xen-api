@@ -173,7 +173,7 @@ DUNE_IU_PACKAGES3=-j $(JOBS) --destdir=$(DESTDIR) --prefix=$(OPTDIR) --libdir=$(
 install-dune3:
 	dune install $(DUNE_IU_PACKAGES3)
 
-DUNE_IU_PACKAGES4=-j $(JOBS) --destdir=$(DESTDIR) --prefix=$(PREFIX) --libdir=$(LIBDIR) --libexecdir=/usr/libexec --mandir=$(MANDIR) vhd-tool
+DUNE_IU_PACKAGES4=-j $(JOBS) --destdir=$(DESTDIR) --prefix=$(PREFIX) --libdir=$(LIBDIR) --libexecdir=/usr/libexec --mandir=$(MANDIR) vhd-tool qcow-tool
 
 install-dune4:
 	dune install $(DUNE_IU_PACKAGES4)
