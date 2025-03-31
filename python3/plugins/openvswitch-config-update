@@ -74,6 +74,7 @@ def update(session, args):
     if not controller and currentControllers:
         delete_cacert()
         runCmd([iptablectl, "close", "6640"])
+        runCmd([iptablectl, "close", "6653"])
         with contextlib.suppress(Exception):
             emergency_reset(session, None)
         removeControllerCfg()
@@ -274,6 +275,7 @@ def setControllerCfg(bootstrap, controller):
                 controller,
             ]
         )
+    runCmd([iptablectl, "open", "6653"])
 
 
 def composeController(protocol, controllerIP, tcpport):
