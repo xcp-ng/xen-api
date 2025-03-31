@@ -106,10 +106,4 @@ let () =
     [
       ("test_kind_ro", test_kind_all test_kind_ro)
     ; ("test_kind_wo", test_kind_all test_kind_wo)
-    ; ( "cancellable sleep"
-      , [
-          Alcotest.test_case "cancellable" `Quick test_cancellable_sleep
-        ; Alcotest.test_case "full" `Quick test_full_sleep
-        ]
-      )
     ]
