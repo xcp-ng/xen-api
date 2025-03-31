@@ -293,7 +293,7 @@ def main(argv):
 
     print("Exec: %s %s" % (qemu_dm, " ".join(qemu_args)))
 
-    clipboardd = '/opt/xensource/libexec/xs-clipboardd'
+    clipboardd = '/opt/xensource/libexec/xcp-clipboardd'
     subprocess.call([clipboardd, "-d", str(domid), "-s", str(s2.fileno())],
                     pass_fds=[s2.fileno()])
 
