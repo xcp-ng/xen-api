@@ -37,7 +37,8 @@ class Implementation(xapi.storage.api.v5.plugin.Plugin_skeleton):
             "required_api_version": "5.0",
             "features": [],
             "configuration": {},
-            "required_cluster_stack": []}
+            "required_cluster_stack": [],
+            "supported_image_formats": []}
 
 
 if __name__ == "__main__":

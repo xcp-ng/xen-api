@@ -173,6 +173,7 @@ module SMAPIv1 : Server_impl = struct
       ; configuration= []
       ; required_cluster_stack= []
       ; smapi_version= SMAPIv1
+      ; supported_image_formats= []
       }
 
     let diagnostics _context ~dbg:_ =

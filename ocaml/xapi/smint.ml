@@ -153,7 +153,7 @@ module Feature = struct
   let of_string_int64_opt (c, v) =
     List.assoc_opt c string_to_capability_table |> Option.map (fun c -> (c, v))
 
-  (** [has_capability c fl] will test weather the required capability [c] is present 
+  (** [has_capability c fl] will test weather the required capability [c] is present
   in the feature list [fl]. Callers should use this function to test if a feature
   is available rather than directly using membership functions on a feature list
   as this function might have special logic for some features. *)
@@ -193,6 +193,7 @@ type sr_driver_info = {
   ; sr_driver_configuration: (string * string) list
   ; sr_driver_required_cluster_stack: string list
   ; sr_smapi_version: Storage_interface.smapi_version
+  ; sr_driver_supported_image_formats: string list
 }
 
 let query_result_of_sr_driver_info x =
@@ -208,6 +209,7 @@ let query_result_of_sr_driver_info x =
   ; configuration= x.sr_driver_configuration
   ; required_cluster_stack= x.sr_driver_required_cluster_stack
   ; smapi_version= x.sr_smapi_version
+  ; supported_image_formats= x.sr_driver_supported_image_formats
   }
 
 type attach_info = {
