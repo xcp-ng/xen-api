@@ -44,6 +44,14 @@ val get_stats_io_errors : t -> Cstruct.uint64
 
 val get_stats_flags : t -> Cstruct.uint64
 
+val get_stats_discard_reqs_submitted : t -> Cstruct.uint64
+
+val get_stats_discard_reqs_completed : t -> Cstruct.uint64
+
+val get_stats_discard_sectors : t -> Cstruct.uint64
+
+val get_stats_discard_total_ticks : t -> Cstruct.uint64
+
 val of_file : string -> t
 
 val copy : t -> t

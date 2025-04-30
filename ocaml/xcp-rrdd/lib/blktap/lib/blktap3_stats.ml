@@ -42,6 +42,28 @@ type stats = {
 }
 [@@little_endian]]
 
+[%%cstruct
+type stats_v2 = {
+    _v1_version: uint32_t
+  ; _v1_pad: uint32_t
+  ; _v1_oo_reqs: uint64_t
+  ; _v1_read_reqs_submitted: uint64_t
+  ; _v1_read_reqs_completed: uint64_t
+  ; _v1_read_sectors: uint64_t
+  ; _v1_read_total_ticks: uint64_t
+  ; _v1_write_reqs_submitted: uint64_t
+  ; _v1_write_reqs_completed: uint64_t
+  ; _v1_write_sectors: uint64_t
+  ; _v1_write_total_ticks: uint64_t
+  ; _v1_io_errors: uint64_t
+  ; _v1_flags: uint64_t
+  ; discard_reqs_submitted: uint64_t
+  ; discard_reqs_completed: uint64_t
+  ; discard_sectors: uint64_t
+  ; discard_total_ticks: uint64_t
+}
+[@@little_endian]]
+
 let of_file f =
   let fd = Unix.(openfile f [O_RDONLY] 0o000) in
   try
@@ -51,6 +73,39 @@ let of_file f =
 
 let copy : t -> t =
  fun t ->
-  let t' = Cstruct.create_unsafe sizeof_stats in
-  Cstruct.blit t 0 t' 0 sizeof_stats ;
-  t'
+  let size =
+    if get_stats_version t >= 2l then
+      sizeof_stats_v2
+    else
+      sizeof_stats
+  in
+  let t' = Cstruct.create_unsafe size in
+  Cstruct.blit t 0 t' 0 size ; t'
+
+let get_stats_discard_reqs_submitted : t -> Cstruct.uint64 =
+ fun t ->
+  if get_stats_version t >= 2l then
+    get_stats_v2_discard_reqs_submitted t
+  else
+    0L
+
+let get_stats_discard_reqs_completed : t -> Cstruct.uint64 =
+ fun t ->
+  if get_stats_version t >= 2l then
+    get_stats_v2_discard_reqs_completed t
+  else
+    0L
+
+let get_stats_discard_sectors : t -> Cstruct.uint64 =
+ fun t ->
+  if get_stats_version t >= 2l then
+    get_stats_v2_discard_sectors t
+  else
+    0L
+
+let get_stats_discard_total_ticks : t -> Cstruct.uint64 =
+ fun t ->
+  if get_stats_version t >= 2l then
+    get_stats_v2_discard_total_ticks t
+  else
+    0L

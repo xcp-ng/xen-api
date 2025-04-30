@@ -36,6 +36,13 @@ let () =
       Printf.printf "write_sectors = %Ld\n" (get_stats_write_sectors s) ;
       Printf.printf "write_total_ticks = %Ld\n" (get_stats_write_total_ticks s) ;
       Printf.printf "io_errors = %Ld\n" (get_stats_io_errors s) ;
-      Printf.printf "flags = %Ld\n" (get_stats_flags s)
+      Printf.printf "flags = %Ld\n" (get_stats_flags s) ;
+      Printf.printf "discard_reqs_submitted = %Ld\n"
+        (get_stats_discard_reqs_submitted s) ;
+      Printf.printf "discard_reqs_completed = %Ld\n"
+        (get_stats_discard_reqs_completed s) ;
+      Printf.printf "discard_sectors = %Ld\n" (get_stats_discard_sectors s) ;
+      Printf.printf "discard_total_ticks = %Ld\n"
+        (get_stats_discard_total_ticks s)
   | _ ->
       usage ()

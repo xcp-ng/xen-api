@@ -593,12 +593,16 @@ module Stats_value = struct
   type t = {
       rd_bytes: int64
     ; wr_bytes: int64
+    ; ds_bytes: int64
     ; rd_avg_usecs: int64
     ; wr_avg_usecs: int64
+    ; ds_avg_usecs: int64
     ; io_throughput_read_mb: float
     ; io_throughput_write_mb: float
+    ; io_throughput_discard_mb: float
     ; iops_read: int64
     ; iops_write: int64
+    ; iops_discard: int64
     ; iowait: float
     ; inflight: int64
   }
@@ -607,12 +611,16 @@ module Stats_value = struct
     {
       rd_bytes= 0L
     ; wr_bytes= 0L
+    ; ds_bytes= 0L
     ; rd_avg_usecs= 0L
     ; wr_avg_usecs= 0L
+    ; ds_avg_usecs= 0L
     ; io_throughput_read_mb= 0.
     ; io_throughput_write_mb= 0.
+    ; io_throughput_discard_mb= 0.
     ; iops_read= 0L
     ; iops_write= 0L
+    ; iops_discard= 0L
     ; iowait= 0.
     ; inflight= 0L
     }
@@ -635,6 +643,7 @@ module Stats_value = struct
         {
           rd_bytes= stats_diff_get 13
         ; wr_bytes= stats_diff_get 14
+        ; ds_bytes= 0L
         ; rd_avg_usecs=
             ( if stats_diff_get 0 > 0L then
                 Int64.div (stats_diff_get 3) (stats_diff_get 0)
@@ -647,10 +656,13 @@ module Stats_value = struct
               else
                 0L
             )
+        ; ds_avg_usecs= 0L
         ; io_throughput_read_mb= to_float (stats_diff_get 13) /. 1048576.
         ; io_throughput_write_mb= to_float (stats_diff_get 14) /. 1048576.
+        ; io_throughput_discard_mb= 0.
         ; iops_read= stats_diff_get 0
         ; iops_write= stats_diff_get 4
+        ; iops_discard= 0L
         ; iowait= to_float (stats_diff_get 10) /. 1000.
         ; inflight= stats_get 8
         }
@@ -689,12 +701,16 @@ module Stats_value = struct
         {
           rd_bytes= Int64.mul (get_stats_read_sectors s3) 512L
         ; wr_bytes= Int64.mul (get_stats_write_sectors s3) 512L
+        ; ds_bytes= Int64.mul (get_stats_discard_sectors s3) 512L
         ; rd_avg_usecs=
             avg_reqs_completed_last_five_secs get_stats_read_reqs_completed
               get_stats_read_total_ticks
         ; wr_avg_usecs=
             avg_reqs_completed_last_five_secs get_stats_write_reqs_completed
               get_stats_write_total_ticks
+        ; ds_avg_usecs=
+            avg_reqs_completed_last_five_secs get_stats_discard_reqs_completed
+              get_stats_discard_total_ticks
         ; io_throughput_read_mb=
             to_float
               (get_stats_read_sectors s3 -- opt get_stats_read_sectors last_s3)
@@ -705,12 +721,22 @@ module Stats_value = struct
               (get_stats_write_sectors s3 -- opt get_stats_write_sectors last_s3)
             *. 512.
             /. 1048576.
+        ; io_throughput_discard_mb=
+            to_float
+              (get_stats_discard_sectors s3
+              -- opt get_stats_discard_sectors last_s3
+              )
+            *. 512.
+            /. 1048576.
         ; iops_read=
             get_stats_read_reqs_completed s3
             -- opt get_stats_read_reqs_completed last_s3
         ; iops_write=
             get_stats_write_reqs_completed s3
             -- opt get_stats_write_reqs_completed last_s3
+        ; iops_discard=
+            get_stats_discard_reqs_completed s3
+            -- opt get_stats_discard_reqs_completed last_s3
         ; iowait=
             to_float
               (get_stats_read_total_ticks s3
@@ -739,12 +765,17 @@ module Stats_value = struct
         ; rd_avg_usecs= acc.rd_avg_usecs ++ v.rd_avg_usecs
         ; wr_bytes= acc.wr_bytes ++ v.wr_bytes
         ; wr_avg_usecs= acc.wr_avg_usecs ++ v.wr_avg_usecs
+        ; ds_bytes= acc.ds_bytes ++ v.ds_bytes
+        ; ds_avg_usecs= acc.ds_avg_usecs ++ v.ds_avg_usecs
         ; io_throughput_read_mb=
             acc.io_throughput_read_mb +. v.io_throughput_read_mb
         ; io_throughput_write_mb=
             acc.io_throughput_write_mb +. v.io_throughput_write_mb
+        ; io_throughput_discard_mb=
+            acc.io_throughput_discard_mb +. v.io_throughput_discard_mb
         ; iops_read= acc.iops_read ++ v.iops_read
         ; iops_write= acc.iops_write ++ v.iops_write
+        ; iops_discard= acc.iops_discard ++ v.iops_discard
         ; iowait= acc.iowait +. v.iowait
         ; inflight= acc.inflight ++ v.inflight
         }
@@ -767,6 +798,12 @@ module Stats_value = struct
           ~min:0.0 ()
       )
     ; ( owner
+      , ds_make ~name:(key_format "discard")
+          ~description:("Discards from device " ^ name ^ ", in B/s")
+          ~value:(Rrd.VT_Int64 value.ds_bytes) ~ty:Rrd.Derive ~units:"B/s"
+          ~min:0.0 ()
+      )
+    ; ( owner
       , ds_make
           ~name:(key_format "read_latency")
           ~description:("Read latency from device " ^ name ^ ", in microseconds")
@@ -783,6 +820,14 @@ module Stats_value = struct
       )
     ; ( owner
       , ds_make
+          ~name:(key_format "discard_latency")
+          ~description:
+            ("Discard latency from device " ^ name ^ ", in microseconds")
+          ~value:(Rrd.VT_Int64 value.ds_avg_usecs) ~ty:Rrd.Gauge ~units:"μs"
+          ~min:0.0 ()
+      )
+    ; ( owner
+      , ds_make
           ~name:(key_format "io_throughput_read")
           ~description:("Data read from the " ^ name ^ ", in MiB/s")
           ~value:(Rrd.VT_Float value.io_throughput_read_mb) ~ty:Rrd.Absolute
@@ -793,6 +838,13 @@ module Stats_value = struct
           ~name:(key_format "io_throughput_write")
           ~description:("Data written to the " ^ name ^ ", in MiB/s")
           ~value:(Rrd.VT_Float value.io_throughput_write_mb) ~ty:Rrd.Absolute
+          ~units:"MiB/s" ~min:0. ()
+      )
+    ; ( owner
+      , ds_make
+          ~name:(key_format "io_throughput_discard")
+          ~description:("Data discard to the " ^ name ^ ", in MiB/s")
+          ~value:(Rrd.VT_Float value.io_throughput_discard_mb) ~ty:Rrd.Absolute
           ~units:"MiB/s" ~min:0. ()
       )
     ; ( owner
@@ -818,9 +870,21 @@ module Stats_value = struct
           ~units:"requests/s" ~min:0. ()
       )
     ; ( owner
+      , ds_make
+          ~name:(key_format "iops_discard")
+          ~description:"Discard requests per second"
+          ~value:(Rrd.VT_Int64 value.iops_discard) ~ty:Rrd.Absolute
+          ~units:"requests/s" ~min:0. ()
+      )
+    ; ( owner
       , ds_make ~name:(key_format "iops_total")
           ~description:"I/O Requests per second"
-          ~value:(Rrd.VT_Int64 (Int64.add value.iops_read value.iops_write))
+          ~value:
+            (Rrd.VT_Int64
+               (Int64.add value.iops_read
+                  (Int64.add value.iops_write value.iops_discard)
+               )
+            )
           ~ty:Rrd.Absolute ~units:"requests/s" ~min:0. ()
       )
     ; ( owner
@@ -858,15 +922,19 @@ module Iostats_value = struct
         let s3_usecs =
           get_stats_read_total_ticks s3
           ++ get_stats_write_total_ticks s3
+          ++ get_stats_discard_total_ticks s3
           -- (opt get_stats_read_total_ticks last_s3
              ++ opt get_stats_write_total_ticks last_s3
+             ++ opt get_stats_discard_total_ticks last_s3
              )
         in
         let s3_count =
           get_stats_read_reqs_completed s3
           ++ get_stats_write_reqs_completed s3
+          ++ get_stats_discard_reqs_completed s3
           -- (opt get_stats_read_reqs_completed last_s3
              ++ opt get_stats_write_reqs_completed last_s3
+             ++ opt get_stats_discard_reqs_completed last_s3
              )
         in
         let s3_latency_average =
@@ -877,8 +945,10 @@ module Iostats_value = struct
           to_float
             (get_stats_read_total_ticks s3
             ++ get_stats_write_total_ticks s3
+            ++ get_stats_discard_total_ticks s3
             -- (opt get_stats_read_total_ticks last_s3
                ++ opt get_stats_write_total_ticks last_s3
+               ++ opt get_stats_discard_total_ticks last_s3
                )
             )
           /. 1000_000.0
