@@ -213,6 +213,7 @@
     yojson
     zstd
     xapi_host_driver_helpers
+    qcow_stream
   )
   (preprocess (per_module
    ((pps ppx_sexp_conv) Cert_distrib)
