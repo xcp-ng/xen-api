@@ -1,18 +1,55 @@
 (library
-  (name qcow)
+  (name qcow_types)
+  (modules (:standard \ qcow qcow_debug qcow_block_cache qcow_cstructs
+                      qcow_padded qcow_recycler qcow_stream))
   (libraries
     astring
     cstruct
     logs
     lwt
     mirage-block
-    mirage-block-unix
-    mirage-types.lwt
+    prometheus
+    sexplib
+  )
+  (wrapped false)
+  (preprocess
+    (pps ppx_sexp_conv)
+  )
+)
+
+(library
+  (name qcow_stream)
+  (modules qcow_stream)
+  (libraries
+    cstruct
+    cstruct-lwt
+    io-page
+    logs
+    lwt
+    lwt.unix
+    qcow_types
+  )
+  (wrapped false)
+  (preprocess
+    (pps ppx_sexp_conv)
+  )
+)
+
+(library
+  (name qcow)
+  (modules qcow qcow_debug qcow_block_cache qcow_cstructs
+           qcow_padded qcow_recycler)
+  (libraries
+    cstruct
+    logs
+    lwt
+    (re_export qcow_types)
+    mirage-block
     prometheus
     io-page
     sexplib
-    stdlib-shims
-    mirage-time fmt
+    mirage-time
+    fmt
     )
   (wrapped false)
   (preprocess
