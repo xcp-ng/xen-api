@@ -1692,7 +1692,10 @@ module Xenopsd_metadata = struct
 
   (* Unregisters a VM with xenopsd, and cleans up metadata and caches *)
   let pull ~__context id =
-    with_lock metadata_m (fun () ->
+    (* Detect if mutex is already locked one level above *)
+    (try Mutex.lock metadata_m with Sys_error _ -> ()) ;
+    finally
+      (fun () ->
         info "xenops: VM.export_metadata %s" id ;
         let dbg = Context.string_of_task_and_tracing __context in
         let module Client =
@@ -1719,7 +1722,8 @@ module Xenopsd_metadata = struct
         in
         delete_nolock ~__context id ;
         md
-    )
+      )
+      (fun () -> try Mutex.unlock metadata_m with Sys_error _ -> ())
 
   let delete ~__context id =
     with_lock metadata_m (fun () -> delete_nolock ~__context id)
@@ -2038,32 +2042,45 @@ let update_vm ~__context id =
                   "Will update VM.allowed_operations because power_state has \
                    changed." ;
                 should_update_allowed_operations := true ;
-                debug "xenopsd event: Updating VM %s power_state <- %s" id
-                  (Record_util.vm_power_state_to_string power_state) ;
-                (* This will mark VBDs, VIFs as detached and clear resident_on
-                   if the VM has permanently shutdown.  current-operations
-                   should not be reset as there maybe a checkpoint is ongoing*)
-                Xapi_vm_lifecycle.force_state_reset_keep_current_operations
-                  ~__context ~self ~value:power_state ;
-                if power_state = `Running then create_guest_metrics_if_needed () ;
-                if power_state = `Suspended || power_state = `Halted then (
-                  Xapi_network.detach_for_vm ~__context ~host:localhost ~vm:self ;
-                  Storage_access.reset ~__context ~vm:self
-                ) ;
-                if power_state = `Halted then
-                  Xenopsd_metadata.delete ~__context id ;
-                ( if power_state = `Suspended then
-                    let md = Xenopsd_metadata.pull ~__context id in
-                    match md.Metadata.domains with
-                    | None ->
-                        error "Suspended VM has no domain-specific metadata"
-                    | Some x ->
-                        Db.VM.set_last_booted_record ~__context ~self ~value:x ;
-                        debug "VM %s last_booted_record set to %s"
-                          (Ref.string_of self) x
-                ) ;
-                if power_state = `Halted then
-                  !trigger_xenapi_reregister ()
+
+                let update_allowed_operations () =
+                  debug "xenopsd event: Updating VM %s power_state <- %s" id
+                    (Record_util.vm_power_state_to_string power_state) ;
+                  (* This will mark VBDs, VIFs as detached and clear resident_on
+                     if the VM has permanently shutdown.  current-operations
+                     should not be reset as there maybe a checkpoint is ongoing*)
+                  Xapi_vm_lifecycle.force_state_reset_keep_current_operations
+                    ~__context ~self ~value:power_state ;
+                  if power_state = `Running then
+                    create_guest_metrics_if_needed () ;
+                  if power_state = `Suspended || power_state = `Halted then (
+                    Xapi_network.detach_for_vm ~__context ~host:localhost
+                      ~vm:self ;
+                    Storage_access.reset ~__context ~vm:self
+                  ) ;
+                  if power_state = `Halted then
+                    Xenopsd_metadata.delete ~__context id ;
+                  ( if power_state = `Suspended then
+                      let md = Xenopsd_metadata.pull ~__context id in
+                      match md.Metadata.domains with
+                      | None ->
+                          error "Suspended VM has no domain-specific metadata"
+                      | Some x ->
+                          Db.VM.set_last_booted_record ~__context ~self ~value:x ;
+                          debug "VM %s last_booted_record set to %s"
+                            (Ref.string_of self) x
+                  ) ;
+                  if power_state = `Halted then
+                    !trigger_xenapi_reregister ()
+                in
+
+                (* Lock metadata_m mutex for the entire update function to
+                   prevent a race where Xenopsd_metadata.push inbetween would
+                   overwrite the data we expect to pull and break the snapshot *)
+                if power_state = `Suspended then (
+                  with_lock metadata_m update_allowed_operations
+                ) else
+                  update_allowed_operations ()
               with e ->
                 error "Caught %s: while updating VM %s power_state"
                   (Printexc.to_string e) id
