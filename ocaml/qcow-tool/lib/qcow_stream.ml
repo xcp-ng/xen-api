@@ -113,9 +113,6 @@ let malloc cluster_bits =
 let read_cluster last_read_cluster fd cluster_bits alloc_func read_func i =
   let cluster = Cluster.to_int64 i in
   if !last_read_cluster ++ 1L = cluster then (
-    (* TODO: we can theoretically read non-sequential clusters if we skip
-       over a few and still put them in the cache - do we need to though?
-    *)
     last_read_cluster := cluster ;
     let buf = alloc_func cluster_bits in
     Printf.printf "\tread_cluster %Lu\n" cluster ;
@@ -374,7 +371,7 @@ let stream_make last_read_cluster fd h sector_size =
     read_cluster last_read_cluster fd h.cluster_bits malloc stream_read
   in
   let write_cluster i buf = assert false in
-  let cache = Cache.create ~read_cluster ~write_cluster () in
+  let cache = Cache.create ~read_cluster ~write_cluster ~seekable:false () in
   let metadata = Metadata.make ~cache ~cluster_bits ~locks () in
   let cluster_info =
     {
