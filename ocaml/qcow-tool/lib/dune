@@ -1,0 +1,63 @@
+(library
+  (name qcow_types)
+  (modules (:standard \ qcow qcow_debug qcow_block_cache qcow_cstructs
+                      qcow_padded qcow_recycler qcow_stream))
+  (libraries
+    astring
+    cstruct
+    logs
+    lwt
+    mirage-block
+    prometheus
+    sexplib
+  )
+  (wrapped false)
+  (preprocess
+    (pps ppx_sexp_conv)
+  )
+)
+
+(library
+  (name qcow_stream)
+  (modules qcow_stream)
+  (libraries
+    cstruct
+    cstruct-lwt
+    io-page
+    logs
+    lwt
+    lwt.unix
+    qcow_types
+  )
+  (wrapped false)
+  (preprocess
+    (pps ppx_sexp_conv)
+  )
+)
+
+(library
+  (name qcow)
+  (modules qcow qcow_debug qcow_block_cache qcow_cstructs
+           qcow_padded qcow_recycler)
+  (libraries
+    cstruct
+    logs
+    lwt
+    (re_export qcow_types)
+    mirage-block
+    prometheus
+    io-page
+    sexplib
+    mirage-time
+    fmt
+    )
+  (wrapped false)
+  (preprocess
+    (pps ppx_sexp_conv)
+  )
+)
+
+(rule
+ (targets qcow_word_size.ml)
+ (action
+  (run ../generator/gen.exe -o %{targets})))
