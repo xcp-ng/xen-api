@@ -2030,7 +2030,7 @@ let migrate_send ~__context ~vm ~dest ~live ~vdi_map ~vif_map ~options ~vgpu_map
         ~vgpu_map ~options
   )
 
-let vdi_pool_migrate ~__context ~vdi ~sr ~options =
+let vdi_pool_migrate ~__context ~vdi ~sr ~dest_img_format ~options =
   if Db.VDI.get_type ~__context ~self:vdi = `cbt_metadata then (
     error "VDI.pool_migrate: the specified VDI has type cbt_metadata (at %s)"
       __LOC__ ;
@@ -2116,13 +2116,15 @@ let vdi_pool_migrate ~__context ~vdi ~sr ~options =
         XenAPI.Host.migrate_receive ~rpc ~session_id ~host:dest_host ~network
           ~options
       in
-      assert_can_migrate ~__context ~vm ~dest ~live:true ~vdi_map ~vif_map:[]
-        ~vgpu_map:[] ~options:[] ;
+      assert_can_migrate ~__context ~vm ~dest ~live:true ~vdi_map
+        ~vdi_format_map:[(vdi, dest_img_format)]
+        ~vif_map:[] ~vgpu_map:[] ~options:[] ;
       assert_can_migrate_sender ~__context ~vm ~dest ~live:true ~vdi_map
         ~vif_map:[] ~vgpu_map:[] ~options:[] ;
       ignore
         (migrate_send ~__context ~vm ~dest ~live:true ~vdi_map
-           ~vdi_format_map:[] ~vif_map:[] ~vgpu_map:[] ~options
+           ~vdi_format_map:[(vdi, dest_img_format)]
+           ~vif_map:[] ~vgpu_map:[] ~options
         )
   ) ;
   Db.VBD.get_VDI ~__context ~self:vbd
