@@ -5316,7 +5316,7 @@ functor
                 ~prefer_slaves:true ~remote_fn
         )
 
-      let pool_migrate ~__context ~vdi ~sr ~options =
+      let pool_migrate ~__context ~vdi ~sr ~dest_img_format ~options =
         let vbds =
           let expr =
             Xapi_database.Db_filter_types.(
@@ -5336,7 +5336,9 @@ functor
           ("__internal__vm", Ref.string_of vm)
           :: List.remove_assoc "__internal__vm" options
         in
-        let local_fn = Local.VDI.pool_migrate ~vdi ~sr ~options in
+        let local_fn =
+          Local.VDI.pool_migrate ~vdi ~sr ~dest_img_format ~options
+        in
         let force =
           try bool_of_string (List.assoc "force" options) with _ -> false
         in
@@ -5371,11 +5373,12 @@ functor
             in
             let remote_fn ~rpc ~session_id =
               let sync_op () =
-                Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr ~options
+                Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr
+                  ~dest_img_format ~options
               in
               let async_op () =
                 Client.InternalAsync.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr
-                  ~options
+                  ~dest_img_format ~options
               in
               Helpers.try_internal_async ~__context API.ref_VDI_of_rpc async_op
                 sync_op

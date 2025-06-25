@@ -2063,8 +2063,12 @@ let vdi_pool_migrate printer rpc session_id params =
     Client.VDI.get_by_uuid ~rpc ~session_id ~uuid:(List.assoc "uuid" params)
   and sr =
     Client.SR.get_by_uuid ~rpc ~session_id ~uuid:(List.assoc "sr-uuid" params)
+  and dest_img_format =
+    List.assoc_opt "dest-img-format" params |> Option.value ~default:""
   and options = [] (* no options implemented yet *) in
-  let newvdi = Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr ~options in
+  let newvdi =
+    Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr ~dest_img_format ~options
+  in
   let newuuid = Client.VDI.get_uuid ~rpc ~session_id ~self:newvdi in
   printer (Cli_printer.PList [newuuid])
 
