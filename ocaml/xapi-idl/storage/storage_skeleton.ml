@@ -157,17 +157,18 @@ module DATA = struct
   module MIRROR = struct
     (** [start task sr vdi url sr2] creates a VDI in remote [url]'s [sr2] and
         writes data synchronously. It returns the id of the VDI.*)
-    let start ctx ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url ~dest =
+    let start ctx ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url ~dest
+        =
       u "DATA.MIRROR.start"
 
     let stop ctx ~dbg ~id = u "DATA.MIRROR.stop"
 
     let stat ctx ~dbg ~id = u "DATA.MIRROR.stat"
 
-    let receive_start ctx ~dbg ~sr ~vdi_info ~id ~similar =
+    let receive_start ctx ~dbg ~sr ~vdi_info ~id ~image_format ~similar =
       u "DATA.MIRROR.receive_start"
 
-    let receive_start2 ctx ~dbg ~sr ~vdi_info ~id ~similar ~vm =
+    let receive_start2 ctx ~dbg ~sr ~vdi_info ~id ~image_format ~similar ~vm =
       u "DATA.MIRROR.receive_start2"
 
     let receive_finalize ctx ~dbg ~id = u "DATA.MIRROR.receive_finalize"

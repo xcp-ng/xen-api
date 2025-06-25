@@ -700,7 +700,7 @@ module MigrateLocal = struct
               ) ;
               vdi_clone
           | None ->
-              debug "Creating a blank remote VDI" ;
+              debug "Creating a blank remote VDI <1>" ;
               Remote.VDI.create dbg dest {local_vdi with sm_config= []}
         in
         let remote_copy =
@@ -721,8 +721,8 @@ module MigrateLocal = struct
     | e ->
         raise (Storage_error (Internal_error (Printexc.to_string e)))
 
-  let start ~task ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url ~dest ~verify_dest
-      =
+  let start ~task ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url ~dest
+      ~verify_dest =
     SXM.info
       "%s sr:%s vdi:%s dp: %s mirror_vm: %s copy_vm: %s url:%s dest:%s \
        verify_dest:%B"
@@ -786,8 +786,8 @@ module MigrateLocal = struct
            )
         ) ;
       let (Mirror.Vhd_mirror result) =
-        Remote.DATA.MIRROR.receive_start2 dbg dest local_vdi mirror_id similars
-          mirror_vm
+        Remote.DATA.MIRROR.receive_start2 dbg dest local_vdi mirror_id
+          image_format similars mirror_vm
       in
       (* Enable mirroring on the local machine *)
       let mirror_dp = result.Mirror.mirror_datapath in
@@ -1122,7 +1122,7 @@ end
 (** module [MigrateRemote] is similar to [MigrateLocal], but most of these functions
 tend to be executed on the receiver side. *)
 module MigrateRemote = struct
-  let receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm =
+  let receive_start_common ~dbg ~sr ~vdi_info ~id ~image_format ~similar ~vm =
     let on_fail : (unit -> unit) list ref = ref [] in
     let vdis = Local.SR.scan dbg sr in
     (* We drop cbt_metadata VDIs that do not have any actual data *)
@@ -1183,9 +1183,19 @@ module MigrateRemote = struct
                   vdi_info.virtual_size new_size
             ) ;
             vdi_clone
-        | None ->
-            debug "Creating a blank remote VDI" ;
-            Local.VDI.create dbg sr vdi_info
+        | None -> (
+            debug "Creating a blank remote VDI <2>" ;
+            debug "image_format is set to <%s>" image_format ;
+            match image_format with
+            | "" ->
+                Local.VDI.create dbg sr vdi_info
+            | _ ->
+                Local.VDI.create dbg sr
+                  {
+                    vdi_info with
+                    sm_config= ("type", image_format) :: vdi_info.sm_config
+                  }
+          )
       in
       debug "Parent disk content_id=%s" parent.content_id ;
       State.add id
@@ -1221,11 +1231,12 @@ module MigrateRemote = struct
         !on_fail ;
       raise e
 
-  let receive_start ~dbg ~sr ~vdi_info ~id ~similar =
-    receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm:(Vm.of_string "0")
+  let receive_start ~dbg ~sr ~vdi_info ~id ~image_format ~similar =
+    receive_start_common ~dbg ~sr ~vdi_info ~id ~image_format ~similar
+      ~vm:(Vm.of_string "0")
 
-  let receive_start2 ~dbg ~sr ~vdi_info ~id ~similar ~vm =
-    receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm
+  let receive_start2 ~dbg ~sr ~vdi_info ~id ~image_format ~similar ~vm =
+    receive_start_common ~dbg ~sr ~vdi_info ~image_format ~id ~similar ~vm
 
   let receive_finalize ~dbg ~id =
     let recv_state = State.find_active_receive_mirror id in
@@ -1446,10 +1457,11 @@ let copy ~dbg ~sr ~vdi ~vm ~url ~dest ~verify_dest =
         ~dest ~verify_dest
   )
 
-let start ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url ~dest ~verify_dest =
+let start ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url ~dest
+    ~verify_dest =
   with_task_and_thread ~dbg (fun task ->
-      MigrateLocal.start ~task ~dbg:dbg.Debug_info.log ~sr ~vdi ~dp ~mirror_vm
-        ~copy_vm ~url ~dest ~verify_dest
+      MigrateLocal.start ~task ~dbg:dbg.Debug_info.log ~sr ~vdi ~image_format
+        ~dp ~mirror_vm ~copy_vm ~url ~dest ~verify_dest
   )
 
 (* XXX: PR-1255: copy the xenopsd 'raise Exception' pattern *)

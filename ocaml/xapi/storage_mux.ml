@@ -836,16 +836,16 @@ module Mux = struct
       with_dbg ~name:"DATA.copy" ~dbg @@ fun dbg -> Storage_migrate.copy ~dbg
 
     module MIRROR = struct
-      let start () ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url ~dest ~verify_dest
-          =
+      let start () ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url
+          ~dest ~verify_dest =
         with_dbg ~name:"DATA.MIRROR.start" ~dbg @@ fun di ->
         info
-          "%s dbg:%s sr: %s vdi: %s dp:%s mirror_vm: %s copy_vm: %s url: %s \
-           dest sr: %s verify_dest: %B"
-          __FUNCTION__ dbg (s_of_sr sr) (s_of_vdi vdi) dp (s_of_vm mirror_vm)
-          (s_of_vm copy_vm) url (s_of_sr dest) verify_dest ;
-        Storage_migrate.start ~dbg:di ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url
-          ~dest ~verify_dest
+          "%s dbg:%s sr: %s vdi: %s image_format: %s dp: %s mirror_vm: %s \
+           copy_vm: %s url: %s dest sr: %s verify_dest: %B"
+          __FUNCTION__ dbg (s_of_sr sr) (s_of_vdi vdi) image_format dp
+          (s_of_vm mirror_vm) (s_of_vm copy_vm) url (s_of_sr dest) verify_dest ;
+        Storage_migrate.start ~dbg:di ~sr ~vdi ~image_format ~dp ~mirror_vm
+          ~copy_vm ~url ~dest ~verify_dest
 
       let stop () ~dbg ~id =
         with_dbg ~name:"DATA.MIRROR.stop" ~dbg @@ fun di ->
@@ -862,26 +862,31 @@ module Mux = struct
         info "%s dbg: %s mirror_id: %s" __FUNCTION__ di.log id ;
         Storage_migrate.stat ~dbg:di.log ~id
 
-      let receive_start () ~dbg ~sr ~vdi_info ~id ~similar =
+      let receive_start () ~dbg ~sr ~vdi_info ~id ~image_format ~similar =
         with_dbg ~name:"DATA.MIRROR.receive_start" ~dbg @@ fun di ->
-        info "%s dbg: %s sr: %s vdi_info: %s mirror_id: %s similar: %s"
+        info
+          "%s dbg: %s sr: %s vdi_info: %s mirror_id: %s image_format: %s \
+           similar: %s"
           __FUNCTION__ dbg (s_of_sr sr)
           (string_of_vdi_info vdi_info)
-          id
+          id image_format
           (String.concat ";" similar) ;
-        Storage_migrate.receive_start ~dbg:di.log ~sr ~vdi_info ~id ~similar
+        Storage_migrate.receive_start ~dbg:di.log ~sr ~vdi_info ~id
+          ~image_format ~similar
 
-      let receive_start2 () ~dbg ~sr ~vdi_info ~id ~similar ~vm =
+      let receive_start2 () ~dbg ~sr ~vdi_info ~id ~image_format ~similar ~vm =
         with_dbg ~name:"DATA.MIRROR.receive_start2" ~dbg @@ fun di ->
-        info "%s dbg: %s sr: %s vdi_info: %s mirror_id: %s similar: %s vm: %s"
+        info
+          "%s dbg: %s sr: %s vdi_info: %s mirror_id: %s image_format: %s \
+           similar: %s vm: %s"
           __FUNCTION__ dbg (s_of_sr sr)
           (string_of_vdi_info vdi_info)
-          id
+          id image_format
           (String.concat ";" similar)
           (s_of_vm vm) ;
         info "%s dbg:%s" __FUNCTION__ dbg ;
-        Storage_migrate.receive_start2 ~dbg:di.log ~sr ~vdi_info ~id ~similar
-          ~vm
+        Storage_migrate.receive_start2 ~dbg:di.log ~sr ~vdi_info ~id
+          ~image_format ~similar ~vm
 
       let receive_finalize () ~dbg ~id =
         with_dbg ~name:"DATA.MIRROR.receive_finalize" ~dbg @@ fun di ->

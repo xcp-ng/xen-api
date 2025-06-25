@@ -4544,6 +4544,7 @@ let vm_migrate_sxm_params =
   ; "remote-network"
   ; "vdi"
   ; "vgpu"
+  ; "image-format"
   ]
 
 let vm_migrate printer rpc session_id params =
@@ -4690,6 +4691,17 @@ let vm_migrate printer rpc session_id params =
               (vdi, sr)
             )
             (read_map_params "vdi" params)
+        in
+        let vdi_format_map =
+          List.map
+            (fun (vdi_uuid, vdi_fmt) ->
+              let vdi =
+                Client.VDI.get_by_uuid ~rpc ~session_id ~uuid:vdi_uuid
+              in
+              debug "GTNDEBUG: add image format %s,%s" vdi_uuid vdi_fmt ;
+              (vdi, vdi_fmt)
+            )
+            (read_map_params "image-format" params)
         in
         let vgpu_map =
           List.map
@@ -4853,7 +4865,8 @@ let vm_migrate printer rpc session_id params =
             rpc session_id
             (fun vm ->
               Client.VM.migrate_send ~rpc ~session_id ~vm:(vm.getref ())
-                ~dest:token ~live:true ~vdi_map ~vif_map ~options ~vgpu_map
+                ~dest:token ~live:true ~vdi_map ~vdi_format_map ~vif_map
+                ~options ~vgpu_map
             )
             params
             (["host"; "host-uuid"; "host-name"; "live"; "force"; "copy"]
