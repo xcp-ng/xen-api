@@ -1143,11 +1143,14 @@ functor
         Impl.DATA.copy context ~dbg ~sr ~vdi ~vm ~url ~dest
 
       module MIRROR = struct
-        let start context ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url ~dest =
-          info "DATA.MIRROR.start dbg:%s sr:%s vdi:%s url:%s dest:%s" dbg
-            (s_of_sr sr) (s_of_vdi vdi) url (s_of_sr dest) ;
-          Impl.DATA.MIRROR.start context ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm
-            ~url ~dest
+        let start context ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm
+            ~url ~dest =
+          info
+            "DATA.MIRROR.start dbg:%s sr:%s vdi:%s image_format:%s url:%s \
+             dest:%s"
+            dbg (s_of_sr sr) (s_of_vdi vdi) image_format url (s_of_sr dest) ;
+          Impl.DATA.MIRROR.start context ~dbg ~sr ~vdi ~image_format ~dp
+            ~mirror_vm ~copy_vm ~url ~dest
 
         let stop context ~dbg ~id =
           info "DATA.MIRROR.stop dbg:%s id:%s" dbg id ;
@@ -1161,20 +1164,26 @@ functor
           info "DATA.MIRROR.stat dbg:%s id:%s" dbg id ;
           Impl.DATA.MIRROR.stat context ~dbg ~id
 
-        let receive_start context ~dbg ~sr ~vdi_info ~id ~similar =
-          info "DATA.MIRROR.receive_start dbg:%s sr:%s id:%s similar:[%s]" dbg
-            (s_of_sr sr) id
-            (String.concat "," similar) ;
-          Impl.DATA.MIRROR.receive_start context ~dbg ~sr ~vdi_info ~id ~similar
-
-        let receive_start2 context ~dbg ~sr ~vdi_info ~id ~similar ~vm =
+        let receive_start context ~dbg ~sr ~vdi_info ~id ~image_format ~similar
+            =
           info
-            "DATA.MIRROR.receive_start2 dbg:%s sr:%s id:%s similar:[%s] vm:%s"
-            dbg (s_of_sr sr) id
+            "DATA.MIRROR.receive_start dbg:%s sr:%s id:%s image_format:%s \
+             similar:[%s]"
+            dbg (s_of_sr sr) id image_format
+            (String.concat "," similar) ;
+          Impl.DATA.MIRROR.receive_start context ~dbg ~sr ~vdi_info ~id
+            ~image_format ~similar
+
+        let receive_start2 context ~dbg ~sr ~vdi_info ~id ~image_format ~similar
+            ~vm =
+          info
+            "DATA.MIRROR.receive_start2 dbg:%s sr:%s id:%s image_format:%s \
+             similar:[%s] vm:%s"
+            dbg (s_of_sr sr) id image_format
             (String.concat "," similar)
             (s_of_vm vm) ;
           Impl.DATA.MIRROR.receive_start2 context ~dbg ~sr ~vdi_info ~id
-            ~similar ~vm
+            ~image_format ~similar ~vm
 
         let receive_finalize context ~dbg ~id =
           info "DATA.MIRROR.receive_finalize dbg:%s id:%s" dbg id ;

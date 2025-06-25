@@ -1213,8 +1213,8 @@ module SMAPIv1 : Server_impl = struct
       assert false
 
     module MIRROR = struct
-      let start _context ~dbg:_ ~sr:_ ~vdi:_ ~dp:_ ~mirror_vm:_ ~copy_vm:_
-          ~url:_ ~dest:_ ~verify_dest:_ =
+      let start _context ~dbg:_ ~sr:_ ~vdi:_ ~image_format:_ ~dp:_ ~mirror_vm:_
+          ~copy_vm:_ ~url:_ ~dest:_ ~verify_dest:_ =
         assert false
 
       let stop _context ~dbg:_ ~id:_ = assert false
@@ -1223,11 +1223,12 @@ module SMAPIv1 : Server_impl = struct
 
       let stat _context ~dbg:_ ~id:_ = assert false
 
-      let receive_start _context ~dbg:_ ~sr:_ ~vdi_info:_ ~id:_ ~similar:_ =
+      let receive_start _context ~dbg:_ ~sr:_ ~vdi_info:_ ~id:_ ~image_format:_
+          ~similar:_ =
         assert false
 
-      let receive_start2 _context ~dbg:_ ~sr:_ ~vdi_info:_ ~id:_ ~similar:_
-          ~vm:_ =
+      let receive_start2 _context ~dbg:_ ~sr:_ ~vdi_info:_ ~id:_ ~image_format:_
+          ~similar:_ ~vm:_ =
         assert false
 
       let receive_finalize _context ~dbg:_ ~id:_ = assert false
