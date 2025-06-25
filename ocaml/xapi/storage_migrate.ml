@@ -51,7 +51,7 @@ module MigrateRemote = struct
     Migrate_Backend.receive_cancel2 () ~dbg ~mirror_id ~url ~verify_dest
 end
 
-(** This module [MigrateLocal] consists of the concrete implementations of the 
+(** This module [MigrateLocal] consists of the concrete implementations of the
 migration part of SMAPI. Functions inside this module are sender driven, which means
 they tend to be executed on the sender side. although there is not a hard rule
 on what is executed on the sender side, this provides some heuristics. *)
@@ -125,15 +125,15 @@ module MigrateLocal = struct
       raise
         (Storage_error (Migration_preparation_failure (Printexc.to_string e)))
 
-  let start ~task_id ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~live_vm ~url ~dest
-      ~verify_dest =
+  let start ~task_id ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm
+      ~live_vm ~url ~dest ~verify_dest =
     SXM.info
-      "%s sr:%s vdi:%s dp: %s mirror_vm: %s copy_vm: %s url:%s dest:%s \
-       verify_dest:%B"
+      "%s sr:%s vdi:%s image_format: %s dp: %s mirror_vm: %s copy_vm: %s \
+       url:%s dest:%s verify_dest:%B"
       __FUNCTION__
       (Storage_interface.Sr.string_of sr)
       (Storage_interface.Vdi.string_of vdi)
-      dp
+      image_format dp
       (Storage_interface.Vm.string_of mirror_vm)
       (Storage_interface.Vm.string_of copy_vm)
       url
@@ -168,11 +168,11 @@ module MigrateLocal = struct
     let (module Migrate_Backend) = choose_backend dbg sr in
     try
       let remote_mirror =
-        prepare ~dbg ~sr ~vdi ~dest ~local_vdi ~mirror_id ~mirror_vm ~url
-          ~verify_dest
+        prepare ~dbg ~sr ~vdi ~image_format ~dest ~local_vdi ~mirror_id
+          ~mirror_vm ~url ~verify_dest
       in
-      Migrate_Backend.send_start () ~dbg ~task_id ~dp ~sr ~vdi ~mirror_vm
-        ~mirror_id ~local_vdi ~copy_vm ~live_vm ~url ~remote_mirror
+      Migrate_Backend.send_start () ~dbg ~task_id ~dp ~sr ~vdi ~image_format
+        ~mirror_vm ~mirror_id ~local_vdi ~copy_vm ~live_vm ~url ~remote_mirror
         ~dest_sr:dest ~verify_dest ;
       Some (Mirror_id mirror_id)
     with
@@ -427,14 +427,14 @@ let copy ~dbg ~sr ~vdi ~vm ~url ~dest ~verify_dest =
         ~sr ~vdi ~vm ~url ~dest ~verify_dest
   )
 
-let start ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~live_vm ~url ~dest ~verify_dest
-    =
+let start ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~live_vm ~url
+    ~dest ~verify_dest =
   with_dbg ~name:__FUNCTION__ ~dbg @@ fun dbg ->
   with_task_and_thread ~dbg (fun task ->
       MigrateLocal.start
         ~task_id:(Storage_task.id_of_handle task)
-        ~dbg:dbg.Debug_info.log ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~live_vm ~url
-        ~dest ~verify_dest
+        ~dbg:dbg.Debug_info.log ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm
+        ~live_vm ~url ~dest ~verify_dest
   )
 
 (* XXX: PR-1255: copy the xenopsd 'raise Exception' pattern *)

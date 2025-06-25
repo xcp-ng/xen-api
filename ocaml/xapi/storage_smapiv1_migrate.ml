@@ -567,13 +567,15 @@ let mirror_cleanup ~dbg ~sr ~snapshot =
 module MIRROR : SMAPIv2_MIRROR = struct
   type context = unit
 
-  let send_start _ctx ~dbg ~task_id ~dp ~sr ~vdi ~mirror_vm ~mirror_id
-      ~local_vdi ~copy_vm ~live_vm ~url ~remote_mirror ~dest_sr ~verify_dest =
+  let send_start _ctx ~dbg ~task_id ~dp ~sr ~vdi ~image_format ~mirror_vm
+      ~mirror_id ~local_vdi ~copy_vm ~live_vm ~url ~remote_mirror ~dest_sr
+      ~verify_dest =
     D.debug
-      "%s dbg: %s dp: %s sr: %s vdi:%s mirror_vm:%s mirror_id: %s live_vm: %s \
-       url:%s dest_sr:%s verify_dest:%B"
-      __FUNCTION__ dbg dp (s_of_sr sr) (s_of_vdi vdi) (s_of_vm mirror_vm)
-      mirror_id (s_of_vm live_vm) url (s_of_sr dest_sr) verify_dest ;
+      "%s dbg: %s dp: %s sr: %s vdi:%s image_format:%s mirror_vm:%s mirror_id: \
+       %s live_vm: %s url:%s dest_sr:%s verify_dest:%B"
+      __FUNCTION__ dbg dp (s_of_sr sr) (s_of_vdi vdi) image_format
+      (s_of_vm mirror_vm) mirror_id (s_of_vm live_vm) url (s_of_sr dest_sr)
+      verify_dest ;
     let (module Remote) =
       Storage_migrate_helper.get_remote_backend url verify_dest
     in
@@ -615,7 +617,7 @@ module MIRROR : SMAPIv2_MIRROR = struct
           (Storage_interface.Vdi.string_of mirror_res.Mirror.mirror_vdi.vdi) ;
         mirror_cleanup ~dbg ~sr ~snapshot
 
-  let receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm
+  let receive_start_common ~dbg ~sr ~vdi_info ~image_format ~id ~similar ~vm
       (module SMAPI : SMAPIv2) =
     let on_fail : (unit -> unit) list ref = ref [] in
     let vdis = SMAPI.SR.scan dbg sr in
@@ -625,6 +627,7 @@ module MIRROR : SMAPIv2_MIRROR = struct
     try
       let vdi_info = {vdi_info with sm_config= [("base_mirror", id)]} in
       let leaf = SMAPI.VDI.create dbg sr vdi_info in
+      D.debug "GTNDEBUG: What to do with image_format" ;
       D.info "Created leaf VDI for mirror receive: %s" (string_of_vdi_info leaf) ;
       on_fail := (fun () -> SMAPI.VDI.destroy dbg sr leaf.vdi) :: !on_fail ;
       (* dummy VDI is created so that the leaf VDI becomes a differencing disk,
@@ -722,29 +725,36 @@ module MIRROR : SMAPIv2_MIRROR = struct
         !on_fail ;
       raise e
 
-  let receive_start _ctx ~dbg ~sr ~vdi_info ~id ~similar =
-    D.debug "%s dbg: %s sr: %s vdi: %s id: %s" __FUNCTION__ dbg (s_of_sr sr)
+  let receive_start _ctx ~dbg ~sr ~vdi_info ~image_format ~id ~similar =
+    D.debug "%s dbg: %s sr: %s vdi: %s image_format: %s id: %s" __FUNCTION__ dbg
+      (s_of_sr sr)
       (string_of_vdi_info vdi_info)
-      id ;
-    receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm:(Vm.of_string "0")
+      image_format id ;
+    receive_start_common ~dbg ~sr ~vdi_info ~image_format ~id ~similar
+      ~vm:(Vm.of_string "0")
       (module Local)
 
-  let receive_start2 _ctx ~dbg ~sr ~vdi_info ~id ~similar ~vm =
-    D.debug "%s dbg: %s sr: %s vdi: %s id: %s" __FUNCTION__ dbg (s_of_sr sr)
+  let receive_start2 _ctx ~dbg ~sr ~vdi_info ~image_format ~id ~similar ~vm =
+    D.debug "%s dbg: %s sr: %s vdi: %s image_format: %s id: %s" __FUNCTION__ dbg
+      (s_of_sr sr)
       (string_of_vdi_info vdi_info)
-      id ;
-    receive_start_common ~dbg ~sr ~vdi_info ~id ~similar ~vm (module Local)
+      image_format id ;
+    receive_start_common ~dbg ~sr ~vdi_info ~image_format ~id ~similar ~vm
+      (module Local)
 
-  let receive_start3 _ctx ~dbg ~sr ~vdi_info ~mirror_id ~similar ~vm ~url
-      ~verify_dest =
-    D.debug "%s dbg: %s sr: %s vdi: %s id: %s vm: %s url: %s verify_dest: %B"
+  let receive_start3 _ctx ~dbg ~sr ~vdi_info ~image_format ~mirror_id ~similar
+      ~vm ~url ~verify_dest =
+    D.debug
+      "%s dbg: %s sr: %s vdi: %s image_format: %s id: %s vm: %s url: %s \
+       verify_dest: %B"
       __FUNCTION__ dbg (s_of_sr sr)
       (string_of_vdi_info vdi_info)
-      mirror_id (s_of_vm vm) url verify_dest ;
+      image_format mirror_id (s_of_vm vm) url verify_dest ;
     let (module Remote) =
       Storage_migrate_helper.get_remote_backend url verify_dest
     in
-    receive_start_common ~dbg ~sr ~vdi_info ~id:mirror_id ~similar ~vm
+    receive_start_common ~dbg ~sr ~vdi_info ~image_format ~id:mirror_id ~similar
+      ~vm
       (module Remote)
 
   let receive_finalize _ctx ~dbg ~id =
