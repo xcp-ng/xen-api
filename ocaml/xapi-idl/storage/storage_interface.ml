@@ -251,6 +251,8 @@ let string_of_vdi_info (x : vdi_info) = Jsonrpc.to_string (rpc_of vdi_info x)
     "datapaths". *)
 type dp = string [@@deriving rpcty]
 
+type image_format = string [@@deriving rpcty]
+
 type sock_path = string [@@deriving rpcty]
 
 type dp_stat_t = {
@@ -276,6 +278,8 @@ type probe_result =
 
 module Mirror = struct
   type id = string [@@deriving rpcty]
+
+  type image_format = string [@@deriving rpcty]
 
   type state = Receiving | Sending | Copying [@@deriving rpcty]
 
@@ -415,6 +419,7 @@ type query_result = {
   ; features: string list
   ; configuration: (string * string) list
   ; required_cluster_stack: string list
+  ; supported_image_formats: string list
 }
 [@@deriving rpcty]
 
@@ -625,9 +630,9 @@ module StorageAPI (R : RPC) = struct
       declare "SR.destroy" [] (dbg_p @-> sr_p @-> returning unit_p err)
 
     (** [scan task sr] returns a list of VDIs contained within an attached SR.
-    @deprecated This function is deprecated, and is only here to keep backward 
-    compatibility with old xapis that call Remote.SR.scan during SXM. 
-    Use the scan2 function instead. 
+    @deprecated This function is deprecated, and is only here to keep backward
+    compatibility with old xapis that call Remote.SR.scan during SXM.
+    Use the scan2 function instead.
     *)
     let scan =
       let open TypeCombinators in
@@ -997,6 +1002,8 @@ module StorageAPI (R : RPC) = struct
         )
 
     module MIRROR = struct
+      let image_format_p = Param.mk ~name:"image_format" image_format
+
       let mirror_vm_p = Param.mk ~name:"mirror_vm" Vm.t
 
       let copy_vm_p = Param.mk ~name:"copy_vm" Vm.t
@@ -1008,6 +1015,7 @@ module StorageAPI (R : RPC) = struct
           (dbg_p
           @-> sr_p
           @-> vdi_p
+          @-> image_format_p
           @-> dp_p
           @-> mirror_vm_p
           @-> copy_vm_p
@@ -1033,6 +1041,9 @@ module StorageAPI (R : RPC) = struct
         Use the receive_start2 function instead. 
       *)
       let receive_start =
+        let image_format_p =
+          Param.mk ~name:"image_format" Mirror.image_format
+        in
         let similar_p = Param.mk ~name:"similar" Mirror.similars in
         let result = Param.mk ~name:"result" Mirror.mirror_receive_result in
         declare "DATA.MIRROR.receive_start" []
@@ -1040,6 +1051,7 @@ module StorageAPI (R : RPC) = struct
           @-> sr_p
           @-> VDI.vdi_info_p
           @-> id_p
+          @-> image_format_p
           @-> similar_p
           @-> returning result err
           )
@@ -1047,6 +1059,9 @@ module StorageAPI (R : RPC) = struct
       (** Called on the receiving end to prepare for receipt of the storage. This
       function should be used in conjunction with [receive_finalize2]*)
       let receive_start2 =
+        let image_format_p =
+          Param.mk ~name:"image_format" Mirror.image_format
+        in
         let similar_p = Param.mk ~name:"similar" Mirror.similars in
         let result = Param.mk ~name:"result" Mirror.mirror_receive_result in
         declare "DATA.MIRROR.receive_start2" []
@@ -1054,6 +1069,7 @@ module StorageAPI (R : RPC) = struct
           @-> sr_p
           @-> VDI.vdi_info_p
           @-> id_p
+          @-> image_format_p
           @-> similar_p
           @-> vm_p
           @-> returning result err
@@ -1419,6 +1435,7 @@ module type Server_impl = sig
         -> dbg:debug_info
         -> sr:sr
         -> vdi:vdi
+        -> image_format:string
         -> dp:dp
         -> mirror_vm:vm
         -> copy_vm:vm
@@ -1437,6 +1454,7 @@ module type Server_impl = sig
         -> sr:sr
         -> vdi_info:vdi_info
         -> id:Mirror.id
+        -> image_format:Mirror.image_format
         -> similar:Mirror.similars
         -> Mirror.mirror_receive_result
 
@@ -1446,6 +1464,7 @@ module type Server_impl = sig
         -> sr:sr
         -> vdi_info:vdi_info
         -> id:Mirror.id
+        -> image_format:Mirror.image_format
         -> similar:Mirror.similars
         -> vm:vm
         -> Mirror.mirror_receive_result
@@ -1632,17 +1651,20 @@ module Server (Impl : Server_impl) () = struct
         Impl.DATA.copy () ~dbg ~sr ~vdi ~vm ~url ~dest ~verify_dest
     ) ;
     S.DATA.MIRROR.start
-      (fun dbg sr vdi dp mirror_vm copy_vm url dest verify_dest ->
-        Impl.DATA.MIRROR.start () ~dbg ~sr ~vdi ~dp ~mirror_vm ~copy_vm ~url
-          ~dest ~verify_dest
+      (fun dbg sr vdi image_format dp mirror_vm copy_vm url dest verify_dest ->
+        Impl.DATA.MIRROR.start () ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm
+          ~copy_vm ~url ~dest ~verify_dest
     ) ;
     S.DATA.MIRROR.stop (fun dbg id -> Impl.DATA.MIRROR.stop () ~dbg ~id) ;
     S.DATA.MIRROR.stat (fun dbg id -> Impl.DATA.MIRROR.stat () ~dbg ~id) ;
-    S.DATA.MIRROR.receive_start (fun dbg sr vdi_info id similar ->
-        Impl.DATA.MIRROR.receive_start () ~dbg ~sr ~vdi_info ~id ~similar
+    S.DATA.MIRROR.receive_start (fun dbg sr vdi_info id image_format similar ->
+        Impl.DATA.MIRROR.receive_start () ~dbg ~sr ~vdi_info ~id ~image_format
+          ~similar
     ) ;
-    S.DATA.MIRROR.receive_start2 (fun dbg sr vdi_info id similar vm ->
-        Impl.DATA.MIRROR.receive_start2 () ~dbg ~sr ~vdi_info ~id ~similar ~vm
+    S.DATA.MIRROR.receive_start2
+      (fun dbg sr vdi_info id image_format similar vm ->
+        Impl.DATA.MIRROR.receive_start2 () ~dbg ~sr ~vdi_info ~id ~image_format
+          ~similar ~vm
     ) ;
     S.DATA.MIRROR.receive_cancel (fun dbg id ->
         Impl.DATA.MIRROR.receive_cancel () ~dbg ~id

@@ -2536,26 +2536,26 @@ functor
              assuming it can ignore this check."
 
       let assert_can_migrate ~__context ~vm ~dest ~live ~vdi_map ~vif_map
-          ~options ~vgpu_map =
+          ~options ~vgpu_map ~vdi_format_map =
         info "VM.assert_can_migrate: VM = '%s'" (vm_uuid ~__context vm) ;
         (* Run the checks that can be done using just the DB directly on the master *)
-        Local.VM.assert_can_migrate ~__context ~vm ~dest ~live ~vdi_map ~vif_map
-          ~vgpu_map ~options ;
+        Local.VM.assert_can_migrate ~__context ~vm ~dest ~live ~vdi_map
+          ~vdi_format_map ~vif_map ~vgpu_map ~options ;
         (* Run further checks on the sending host *)
         assert_can_migrate_sender ~__context ~vm ~dest ~live ~vdi_map ~vif_map
           ~vgpu_map ~options
 
       let migrate_send ~__context ~vm ~dest ~live ~vdi_map ~vif_map ~options
-          ~vgpu_map =
+          ~vgpu_map ~vdi_format_map =
         info "VM.migrate_send: VM = '%s'" (vm_uuid ~__context vm) ;
         let source_host = Db.VM.get_resident_on ~__context ~self:vm in
         let local_fn =
-          Local.VM.migrate_send ~vm ~dest ~live ~vdi_map ~vif_map ~vgpu_map
-            ~options
+          Local.VM.migrate_send ~vm ~dest ~live ~vdi_map ~vdi_format_map
+            ~vif_map ~vgpu_map ~options
         in
         let op session_id rpc =
           Client.VM.migrate_send ~rpc ~session_id ~vm ~dest ~live ~vdi_map
-            ~vif_map ~options ~vgpu_map
+            ~vdi_format_map ~vif_map ~options ~vgpu_map
         in
         let migration_type =
           if Xapi_vm_lifecycle_helpers.is_live ~__context ~self:vm then
@@ -2575,7 +2575,8 @@ functor
                 Helpers.try_internal_async ~__context API.ref_VM_of_rpc
                   (fun () ->
                     Client.InternalAsync.VM.migrate_send ~rpc ~session_id ~vm
-                      ~dest ~live ~vdi_map ~vif_map ~options ~vgpu_map
+                      ~dest ~live ~vdi_map ~vdi_format_map ~vif_map ~options
+                      ~vgpu_map
                   )
                   (fun () -> op session_id rpc)
             )
@@ -2614,7 +2615,7 @@ functor
               Server_helpers.exec_with_subtask ~__context
                 "VM.assert_can_migrate" (fun ~__context ->
                   assert_can_migrate ~__context ~vm ~dest ~live ~vdi_map
-                    ~vif_map ~vgpu_map ~options
+                    ~vdi_format_map ~vif_map ~vgpu_map ~options
               ) ;
               forward_migrate_send ()
           )
@@ -5454,7 +5455,7 @@ functor
                 ~prefer_slaves:true op
         )
 
-      let pool_migrate ~__context ~vdi ~sr ~options =
+      let pool_migrate ~__context ~vdi ~sr ~dest_img_format ~options =
         let vbds =
           let expr =
             Xapi_database.Db_filter_types.(
@@ -5474,7 +5475,9 @@ functor
           ("__internal__vm", Ref.string_of vm)
           :: List.remove_assoc "__internal__vm" options
         in
-        let local_fn = Local.VDI.pool_migrate ~vdi ~sr ~options in
+        let local_fn =
+          Local.VDI.pool_migrate ~vdi ~sr ~dest_img_format ~options
+        in
         let force =
           try bool_of_string (List.assoc "force" options) with _ -> false
         in
@@ -5509,11 +5512,12 @@ functor
             in
             let op session_id rpc =
               let sync_op () =
-                Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr ~options
+                Client.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr
+                  ~dest_img_format ~options
               in
               let async_op () =
                 Client.InternalAsync.VDI.pool_migrate ~rpc ~session_id ~vdi ~sr
-                  ~options
+                  ~dest_img_format ~options
               in
               Helpers.try_internal_async ~__context API.ref_VDI_of_rpc async_op
                 sync_op

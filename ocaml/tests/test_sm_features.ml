@@ -244,6 +244,7 @@ module CreateSMObject = Generic.MakeStateful (struct
       ; features
       ; configuration= []
       ; required_cluster_stack= []
+      ; supported_image_formats= []
       }
 
   let extract_output __context _ =
