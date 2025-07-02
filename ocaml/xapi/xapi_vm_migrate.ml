@@ -245,6 +245,7 @@ let assert_vdi_format_is_supported ~__context ~vdi_map ~vdi_format_map =
             Db.SM.get_refs_where ~__context
               ~expr:(Eq (Field "type", Literal sr_type))
           in
+          (* We expect that one sr_type matches one sm_ref *)
           match sm_refs with
           | [sm_ref] ->
               debug "GTNDEBUG: read vdi %s, sr %s. Type is %s" vdi_uuid sr_uuid
@@ -252,7 +253,8 @@ let assert_vdi_format_is_supported ~__context ~vdi_map ~vdi_format_map =
               let sm_formats =
                 Db.SM.get_supported_image_formats ~__context ~self:sm_ref
               in
-              if sm_formats <> [] && not (List.mem ty sm_formats) then
+              if ty <> "" && sm_formats <> [] && not (List.mem ty sm_formats)
+              then
                 raise
                   Api_errors.(
                     Server_error
@@ -271,7 +273,7 @@ let assert_vdi_format_is_supported ~__context ~vdi_map ~vdi_format_map =
                     , [
                         Printf.sprintf
                           "Found more than one SM ref (%d) when checking type \
-                           (%s)of VDI."
+                           (%s) of VDI."
                           (List.length sm_refs) ty
                       ]
                     )
