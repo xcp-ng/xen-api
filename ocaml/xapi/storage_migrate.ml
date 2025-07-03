@@ -724,11 +724,12 @@ module MigrateLocal = struct
   let start ~task ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url ~dest
       ~verify_dest =
     SXM.info
-      "%s sr:%s vdi:%s dp: %s mirror_vm: %s copy_vm: %s url:%s dest:%s \
+      "%s sr:%s vdi:%s image_format: %s dp: %s mirror_vm: %s copy_vm: %s url:%s dest:%s \
        verify_dest:%B"
       __FUNCTION__
       (Storage_interface.Sr.string_of sr)
       (Storage_interface.Vdi.string_of vdi)
+      image_format
       dp
       (Storage_interface.Vm.string_of mirror_vm)
       (Storage_interface.Vm.string_of copy_vm)
@@ -868,10 +869,11 @@ module MigrateLocal = struct
       debug "%s Updated mirror_id %s in the active local mirror" __FUNCTION__
         mirror_id ;
 
-      SXM.info "%s About to snapshot VDI = %s" __FUNCTION__
-        (string_of_vdi_info local_vdi) ;
       let local_vdi = add_to_sm_config local_vdi "mirror" ("nbd:" ^ dp) in
       let local_vdi = add_to_sm_config local_vdi "base_mirror" mirror_id in
+      let local_vdi = add_to_sm_config local_vdi "image-format" image_format in
+      SXM.info "%s About to snapshot VDI = %s" __FUNCTION__
+        (string_of_vdi_info local_vdi) ;
       let snapshot =
         try Local.VDI.snapshot dbg sr local_vdi with
         | Storage_interface.Storage_error (Backend_error (code, _))
