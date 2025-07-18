@@ -724,13 +724,12 @@ module MigrateLocal = struct
   let start ~task ~dbg ~sr ~vdi ~image_format ~dp ~mirror_vm ~copy_vm ~url ~dest
       ~verify_dest =
     SXM.info
-      "%s sr:%s vdi:%s image_format: %s dp: %s mirror_vm: %s copy_vm: %s url:%s dest:%s \
-       verify_dest:%B"
+      "%s sr:%s vdi:%s image_format: %s dp: %s mirror_vm: %s copy_vm: %s \
+       url:%s dest:%s verify_dest:%B"
       __FUNCTION__
       (Storage_interface.Sr.string_of sr)
       (Storage_interface.Vdi.string_of vdi)
-      image_format
-      dp
+      image_format dp
       (Storage_interface.Vm.string_of mirror_vm)
       (Storage_interface.Vm.string_of copy_vm)
       url
@@ -871,7 +870,13 @@ module MigrateLocal = struct
 
       let local_vdi = add_to_sm_config local_vdi "mirror" ("nbd:" ^ dp) in
       let local_vdi = add_to_sm_config local_vdi "base_mirror" mirror_id in
-      let local_vdi = add_to_sm_config local_vdi "image-format" image_format in
+      let local_vdi =
+        match image_format with
+        | "" ->
+            local_vdi
+        | fmt ->
+            add_to_sm_config local_vdi "image-format" fmt
+      in
       SXM.info "%s About to snapshot VDI = %s" __FUNCTION__
         (string_of_vdi_info local_vdi) ;
       let snapshot =
@@ -1131,7 +1136,14 @@ module MigrateRemote = struct
     let vdis = List.filter (fun vdi -> vdi.ty <> "cbt_metadata") vdis in
     let leaf_dp = Local.DP.create dbg Uuidx.(to_string (make ())) in
     try
-      let vdi_info = {vdi_info with sm_config= [("base_mirror", id)]} in
+      let vdi_info = add_to_sm_config vdi_info "base_mirror" id in
+      let vdi_info =
+        match image_format with
+        | "" ->
+            vdi_info
+        | fmt ->
+            add_to_sm_config vdi_info "image-format" fmt
+      in
       let leaf = Local.VDI.create dbg sr vdi_info in
       info "Created leaf VDI for mirror receive: %s" (string_of_vdi_info leaf) ;
       on_fail := (fun () -> Local.VDI.destroy dbg sr leaf.vdi) :: !on_fail ;
