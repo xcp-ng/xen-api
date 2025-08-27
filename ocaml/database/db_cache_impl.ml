@@ -62,9 +62,7 @@ let read_field t tblname fldname objref =
     occurs. *)
 let ensure_utf8_xml string =
   let length = String.length string in
-  let prefix =
-    Xapi_stdext_encodings.Encodings.UTF8_XML.longest_valid_prefix string
-  in
+  let prefix = Xapi_stdext_encodings.Utf8.XML.longest_valid_prefix string in
   if length > String.length prefix then
     warn "string truncated to: '%s'." prefix ;
   prefix
@@ -75,7 +73,7 @@ let write_field_locked t tblname objref fldname newval =
   if current_val <> newval then (
     ( match newval with
     | Schema.Value.String s ->
-        if not (Xapi_stdext_encodings.Encodings.UTF8_XML.is_valid s) then
+        if not (Xapi_stdext_encodings.Utf8.XML.is_valid s) then
           raise Invalid_value
     | _ ->
         ()
@@ -86,12 +84,36 @@ let write_field_locked t tblname objref fldname newval =
       (get_database t)
   )
 
+(** Ensure a value is conforming to UTF-8 with XML restrictions *)
+let is_valid v =
+  let valid = Xapi_stdext_encodings.Utf8.XML.is_valid in
+  let valid_pair (x, y) = valid x && valid y in
+  match v with
+  | Schema.Value.String s ->
+      valid s
+  | Schema.Value.Set ss ->
+      List.for_all valid ss
+  | Schema.Value.Pairs pairs ->
+      List.for_all valid_pair pairs
+
+let share_string = function
+  | Schema.Value.String s ->
+      Schema.Value.String (Share.merge s)
+  | v ->
+      (* we assume strings in the tree have been shared already *)
+      v
+
 let write_field t tblname objref fldname newval =
   let db = get_database t in
   let schema = Schema.table tblname (Database.schema db) in
   let column = Schema.Table.find fldname schema in
   let newval = Schema.Value.unmarshal column.Schema.Column.ty newval in
-  with_lock (fun () -> write_field_locked t tblname objref fldname newval)
+  if not @@ is_valid newval then
+    raise Invalid_value
+  else
+    with_lock (fun () ->
+        write_field_locked t tblname objref fldname (share_string newval)
+    )
 
 let touch_row t tblname objref =
   update_database t (touch tblname objref) ;
