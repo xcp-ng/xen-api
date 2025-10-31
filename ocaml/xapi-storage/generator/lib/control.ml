@@ -330,6 +330,17 @@ module Volume (R : RPC) = struct
       ]
       (dbg @-> sr @-> key @-> new_size @-> returning unit errors)
 
+  let resize_online =
+    let new_size =
+      Param.mk ~name:"new_size" ~description:["New disk size"] Types.int64
+    in
+    R.declare "resize_online"
+      [
+        "[resize_online sr volume new_size] enlarges [volume] to be at least "
+      ; "[new_size]."
+      ]
+      (dbg @-> sr @-> key @-> new_size @-> returning unit errors)
+
   let stat =
     R.declare "stat"
       ["[stat sr volume] returns metadata associated with [volume]."]

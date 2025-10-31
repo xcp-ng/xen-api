@@ -299,6 +299,20 @@ let vdi_resize ~dbg dconf driver sr vdi newsize =
   in
   Sm_exec.parse_vdi_info (Sm_exec.exec_xmlrpc ~dbg (driver_filename driver) call)
 
+let vdi_resize_online ~dbg dconf driver sr vdi newsize =
+  with_dbg ~dbg ~name:"vdi_resize_online" @@ fun di ->
+  let dbg = Debug_info.to_string di in
+  debug "vdi_resize_online" driver
+    (sprintf "sr=%s vdi=%s newsize=%Ld" (Ref.string_of sr) (Ref.string_of vdi)
+       newsize
+    ) ;
+  srmaster_only dconf ;
+  let call =
+    Sm_exec.make_call ~sr_ref:sr ~vdi_ref:vdi dconf "vdi_resize_online"
+      [sprintf "%Lu" newsize]
+  in
+  Sm_exec.parse_vdi_info (Sm_exec.exec_xmlrpc ~dbg (driver_filename driver) call)
+
 let vdi_generate_config ~dbg dconf driver sr vdi =
   with_dbg ~dbg ~name:"vdi_generate_config" @@ fun di ->
   let dbg = Debug_info.to_string di in

@@ -106,6 +106,9 @@ module VDI = struct
   let resize ctx ~dbg ~sr ~vdi ~new_size =
     Storage_interface.unimplemented __FUNCTION__
 
+  let resize_online ctx ~dbg ~sr ~vdi ~new_size =
+    Storage_interface.unimplemented __FUNCTION__
+
   let destroy ctx ~dbg ~sr ~vdi = Storage_interface.unimplemented __FUNCTION__
 
   let stat ctx ~dbg ~sr ~vdi = Storage_interface.unimplemented __FUNCTION__

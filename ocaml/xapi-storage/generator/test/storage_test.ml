@@ -181,6 +181,7 @@ let volume_server () =
   Volume.set unimplemented ;
   Volume.unset unimplemented ;
   Volume.resize unimplemented ;
+  Volume.resize_online unimplemented ;
   Volume.stat unimplemented ;
   Volume.compare unimplemented ;
   Volume.similar_content unimplemented ;

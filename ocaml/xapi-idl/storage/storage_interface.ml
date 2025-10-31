@@ -813,6 +813,14 @@ module StorageAPI (R : RPC) = struct
       declare "VDI.resize" []
         (dbg_p @-> sr_p @-> vdi_p @-> new_size_p @-> returning new_size_p err)
 
+    (** [resize_online task sr vdi new_size] makes a VDI's virtual_size at least
+        [new_size] bytes. The function returns the new virtual_size which may be
+        bigger (but not less than) requested. *)
+    let resize_online =
+      let new_size_p = Param.mk ~name:"new_size" Types.int64 in
+      declare "VDI.resize_online" []
+        (dbg_p @-> sr_p @-> vdi_p @-> new_size_p @-> returning new_size_p err)
+
     (** [destroy task sr vdi] removes [vdi] from [sr] *)
     let destroy =
       declare "VDI.destroy" []
@@ -1525,6 +1533,9 @@ module type Server_impl = sig
     val resize :
       context -> dbg:debug_info -> sr:sr -> vdi:vdi -> new_size:int64 -> int64
 
+    val resize_online :
+      context -> dbg:debug_info -> sr:sr -> vdi:vdi -> new_size:int64 -> int64
+
     val destroy : context -> dbg:debug_info -> sr:sr -> vdi:vdi -> unit
 
     val stat : context -> dbg:debug_info -> sr:sr -> vdi:vdi -> vdi_info
@@ -1779,6 +1790,9 @@ module Server (Impl : Server_impl) () = struct
     S.VDI.clone (fun dbg sr vdi_info -> Impl.VDI.clone () ~dbg ~sr ~vdi_info) ;
     S.VDI.resize (fun dbg sr vdi new_size ->
         Impl.VDI.resize () ~dbg ~sr ~vdi ~new_size
+    ) ;
+    S.VDI.resize_online (fun dbg sr vdi new_size ->
+        Impl.VDI.resize_online () ~dbg ~sr ~vdi ~new_size
     ) ;
     S.VDI.destroy (fun dbg sr vdi -> Impl.VDI.destroy () ~dbg ~sr ~vdi) ;
     S.VDI.stat (fun dbg sr vdi -> Impl.VDI.stat () ~dbg ~sr ~vdi) ;

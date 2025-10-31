@@ -549,7 +549,7 @@ let test_update_allowed_operations () =
   let allowed_operations =
     Db.VDI.get_allowed_operations ~__context ~self:vdi_ref
   in
-  let ok_ops : API.vdi_operations_set = [`snapshot; `clone; `copy] in
+  let ok_ops : API.vdi_operations_set = [`snapshot; `clone; `copy; `resize_online] in
   Alcotest.(check Alcotest_comparators.vdi_operations_set)
     "update_allowed_operations should be correct" ok_ops allowed_operations ;
   let vbd_ref = Db.VDI.get_VBDs ~__context ~self:vdi_ref |> List.hd in

@@ -480,6 +480,15 @@ module Mux = struct
       end)) in
       C.VDI.resize (Debug_info.to_string di) sr vdi new_size
 
+    let resize_online () ~dbg ~sr ~vdi ~new_size =
+      with_dbg ~name:"VDI.resize_online" ~dbg @@ fun di ->
+      info "VDI.resize_online dbg:%s sr:%s vdi:%s new_size:%Ld" dbg (s_of_sr sr)
+        (s_of_vdi vdi) new_size ;
+      let module C = StorageAPI (Idl.Exn.GenClient (struct
+        let rpc = of_sr sr
+      end)) in
+      C.VDI.resize_online (Debug_info.to_string di) sr vdi new_size
+
     let destroy () ~dbg ~sr ~vdi =
       with_dbg ~name:"VDI.destroy" ~dbg @@ fun di ->
       info "VDI.destroy dbg:%s sr:%s vdi:%s" dbg (s_of_sr sr) (s_of_vdi vdi) ;

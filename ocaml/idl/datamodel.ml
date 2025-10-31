@@ -5336,16 +5336,7 @@ module VDI = struct
       ~doc:"Resize the VDI." ~allowed_roles:_R_VM_ADMIN ()
 
   let resize_online =
-    call ~name:"resize_online" ~in_oss_since:None
-      ~lifecycle:
-        [
-          (Published, rel_rio, "")
-        ; (Deprecated, rel_inverness, "Dummy transition")
-        ; ( Removed
-          , rel_inverness
-          , "Online VDI resize is not supported by any of the storage backends."
-          )
-        ]
+    call ~name:"resize_online" ~in_oss_since:None ~lifecycle:[]
       ~params:
         [
           (Ref _vdi, "vdi", "The VDI to resize")

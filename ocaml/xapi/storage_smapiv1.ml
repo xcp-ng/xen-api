@@ -771,6 +771,31 @@ module SMAPIv1 : Server_impl = struct
       | Sm.MasterOnly ->
           redirect sr
 
+    let resize_online _context ~dbg ~sr ~vdi ~new_size =
+      with_dbg ~name:"VDI.resize_online" ~dbg @@ fun di ->
+      let dbg = Debug_info.to_string di in
+      try
+        let vi =
+          for_vdi ~dbg ~sr ~vdi "VDI.resize_online" (fun device_config _type sr self ->
+              Sm.vdi_resize_online ~dbg device_config _type sr self new_size
+          )
+        in
+        Server_helpers.exec_with_new_task "VDI.resize_online"
+          ~subtask_of:(Ref.of_string dbg) (fun __context ->
+            let self, _ =
+              find_vdi ~__context sr
+                (Storage_interface.Vdi.of_string vi.Smint.vdi_info_location)
+            in
+            Db.VDI.get_virtual_size ~__context ~self
+        )
+      with
+      | Api_errors.Server_error (code, params) ->
+          raise (Storage_error (Backend_error (code, params)))
+      | Smint.Not_implemented_in_backend ->
+          raise (Storage_error (Unimplemented "VDI.resize_online"))
+      | Sm.MasterOnly ->
+          redirect sr
+
     let destroy _context ~dbg ~sr ~vdi =
       with_dbg ~name:"VDI.destroy" ~dbg @@ fun di ->
       let dbg = Debug_info.to_string di in
