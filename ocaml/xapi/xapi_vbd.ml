@@ -342,6 +342,10 @@ let insert ~__context ~vbd ~vdi =
   assert_ok_to_insert ~__context ~vbd ~vdi ;
   Xapi_xenops.vbd_insert ~__context ~self:vbd ~vdi
 
+let resize_online ~__context ~vbd ~size =
+  assert_not_empty ~__context ~vbd ;
+  Xapi_xenops.vbd_resize_online ~__context ~self:vbd ~value:size
+
 let assert_ok_to_eject ~__context ~vbd =
   let vm = Db.VBD.get_VM ~__context ~self:vbd in
   assert_removable ~__context ~vbd ;

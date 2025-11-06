@@ -6504,6 +6504,7 @@ module VBD = struct
         ; ("unplug_force", "Attempting to forcibly unplug this VBD")
         ; ("pause", "Attempting to pause a block device backend")
         ; ("unpause", "Attempting to unpause a block device backend")
+        ; ("resize_online", "Attempting to online resize a block device backend")
         ]
       )
 
@@ -6532,6 +6533,17 @@ module VBD = struct
         ]
       ~errs:[Api_errors.vbd_not_removable_media; Api_errors.vbd_not_empty]
       ~allowed_roles:_R_VM_OP ()
+
+  let resize_online =
+    call ~name:"resize_online"
+      ~lifecycle:[(Published, rel_rio, "Resize a media online")]
+      ~doc:"Resize a media online"
+      ~params:
+        [
+          (Ref _vbd, "vbd", "The vbd representing the device")
+        ; (Int, "size", "The new size of the media")
+        ]
+      ~allowed_roles:_R_VM_ADMIN ()
 
   let plug =
     call ~name:"plug"
@@ -6714,6 +6726,7 @@ module VBD = struct
         ; pause
         ; unpause
         ; set_mode
+        ; resize_online
         ]
       ~contents:
         ([

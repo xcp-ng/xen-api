@@ -955,6 +955,11 @@ module XenopsAPI (R : RPC) = struct
     let remove =
       declare "VBD.remove" []
         (debug_info_p @-> vbd_id_p @-> returning unit_p err)
+
+    let resize_online =
+      let new_size_p = Param.mk ~name:"new_size" Types.int64 in
+      declare "VBD.resize_online" []
+        (debug_info_p @-> vbd_id_p @-> new_size_p @-> returning task_id_p err)
   end
 
   module VUSB = struct

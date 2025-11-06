@@ -164,6 +164,8 @@ module VBD = struct
   let get_state _ _ = unplugged_vbd
 
   let get_device_action_request _ _ = None
+
+  let resize_online _ _ _ _ = unimplemented __FUNCTION__
 end
 
 module VIF = struct

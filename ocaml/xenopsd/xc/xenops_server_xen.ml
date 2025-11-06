@@ -4311,6 +4311,24 @@ module VBD = struct
             vm (id_of vbd) ;
           None
     )
+
+  let resize_online task vm vbd new_size =
+    with_xc_and_xs (fun xc xs ->
+        let (device : Device_common.device) =
+          device_by_id xc xs vm (device_kind_of ~xs vbd) (id_of vbd)
+        in
+        debug "VM = %s; VBD = %s; VBD.resize_online %s new_size %Ld" vm
+          (id_of vbd)
+          (Device_common.string_of_device device)
+          new_size ;
+        let backend_path = Device_common.backend_path_of_device ~xs device in
+        let sectors_path = backend_path ^ "/sectors" in
+        let resize_path = backend_path ^ "/resize-device" in
+        debug "xenstore-write %s = %Ld" sectors_path new_size;
+        xs.Xs.write sectors_path (Int64.to_string new_size);
+        debug "xenstore-write %s" resize_path;
+        xs.Xs.write resize_path ""
+    )
 end
 
 module VIF = struct
