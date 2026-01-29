@@ -693,6 +693,8 @@ module VBD = struct
   let get_state vm vbd = with_lock m (vbd_state vm vbd)
 
   let get_device_action_request _vm _vbd = None
+
+  let resize_online task vm vbd new_size = ()
 end
 
 module VIF = struct

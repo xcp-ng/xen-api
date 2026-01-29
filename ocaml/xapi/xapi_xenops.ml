@@ -4213,6 +4213,22 @@ let vbd_insert_hvm ~__context ~self ~vdi =
           (Ref.string_of self) (Ref.string_of vdi) (Ref.string_of vdi)
   )
 
+let vbd_resize_online ~__context ~self ~value =
+  let@ __context = Context.with_tracing ~__context __FUNCTION__ in
+  let vm = Db.VBD.get_VM ~__context ~self in
+  let queue_name = queue_of_vm ~__context ~self:vm in
+  transform_xenops_exn ~__context ~vm queue_name (fun () ->
+      assert_resident_on ~__context ~self:vm ;
+      let vbd = md_of_vbd ~__context ~self in
+      info "xenops: VBD.resize_online %s.%s %Ld" (fst vbd.Vbd.id) (snd vbd.Vbd.id) value ;
+      let id = id_of_vm ~__context ~self:vm in
+      let dbg = Context.string_of_task_and_tracing __context in
+      let module Client = (val make_client queue_name : XENOPS) in
+      debug "xenops: VBD.resize_online %s" id ;
+      Client.VBD.resize_online dbg vbd.Vbd.id value |> sync_with_task __context queue_name ;
+      Events_from_xenopsd.wait queue_name dbg id ()
+  )
+
 let has_qemu ~__context ~vm =
   let@ __context = Context.with_tracing ~__context __FUNCTION__ in
   let dbg = Context.string_of_task_and_tracing __context in

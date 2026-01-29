@@ -39,6 +39,7 @@ let all_ops : API.storage_operations_set =
   ; `vdi_create
   ; `vdi_destroy
   ; `vdi_resize
+  ; `vdi_resize_online
   ; `vdi_clone
   ; `vdi_snapshot
   ; `vdi_mirror
@@ -64,6 +65,7 @@ let all_rpu_ops : API.storage_operations_set =
   ; `vdi_create
   ; `vdi_destroy
   ; `vdi_resize
+  ; `vdi_resize_online
   ; `vdi_clone
   ; `vdi_snapshot
   ; `vdi_introduce
@@ -81,6 +83,7 @@ let sm_cap_table : (API.storage_operations * _) list =
     (`vdi_create, Vdi_create)
   ; (`vdi_destroy, Vdi_delete)
   ; (`vdi_resize, Vdi_resize)
+  ; (`vdi_resize_online, Vdi_resize)
   ; (`vdi_introduce, Vdi_introduce)
   ; (`vdi_mirror, Vdi_mirror)
   ; (`vdi_enable_cbt, Vdi_configure_cbt)

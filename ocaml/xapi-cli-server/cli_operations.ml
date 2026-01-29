@@ -2008,9 +2008,25 @@ let vdi_resize _printer rpc session_id params =
   let online =
     List.mem_assoc "online" params && List.assoc "online" params = "true"
   in
-  if online then
-    Client.VDI.resize_online ~rpc ~session_id ~vdi ~size:new_size
-  else
+  if online then (
+    Client.VDI.resize_online ~rpc ~session_id ~vdi ~size:new_size;
+    let all_vbds = Client.VDI.get_VBDs ~rpc ~session_id ~self:vdi in
+    let all_vbd_records = List.map (vbd_record rpc session_id) all_vbds in
+    let active_records =
+      List.filter
+        (fun x -> (field_lookup x.fields "currently-attached").get () = "true")
+        all_vbd_records
+    in
+    List.iter
+      (fun vbd_record ->
+        let vbd_uuid = (field_lookup vbd_record.fields "uuid").get () in
+        let vbd =
+          Client.VBD.get_by_uuid ~rpc ~session_id ~uuid:vbd_uuid
+        in
+        Client.VBD.resize_online ~rpc ~session_id ~vbd ~size:new_size
+      )
+      active_records
+  ) else
     Client.VDI.resize ~rpc ~session_id ~vdi ~size:new_size
 
 let vdi_generate_config printer rpc session_id params =

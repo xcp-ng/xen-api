@@ -31,12 +31,10 @@ let feature_of_op =
       Some Vdi_snapshot
   | `destroy ->
       Some Vdi_delete
-  | `resize ->
+  | `resize | `resize_online ->
       Some Vdi_resize
   | `update ->
       Some Vdi_update
-  | `resize_online ->
-      Some Vdi_resize_online
   | `generate_config ->
       Some Vdi_generate_config
   | `clone ->
@@ -407,6 +405,12 @@ let check_operation_error ~__context ?sr_records:_ ?(pbd_records = [])
     | `resize_online ->
         if ha_enabled && vdi_is_ha_state_or_redolog then
           Error (Api_errors.ha_is_enabled, [])
+        else if my_active_vbd_records = [] then
+          Error ( Api_errors.operation_not_allowed
+                , [
+                    "VDI is not attached to a running VM, online operation is not allowed."
+                  ]
+                )
         else
           Ok ()
     | `snapshot when record.Db_actions.vDI_sharable ->
@@ -1078,6 +1082,26 @@ let resize ~__context ~vdi ~size =
       in
       let dbg = Ref.string_of (Context.get_task_id __context) in
       let new_size = C.VDI.resize dbg sr vdi' size in
+      Db.VDI.set_virtual_size ~__context ~self:vdi ~value:new_size
+  )
+
+let resize_online ~__context ~vdi ~size =
+  Sm.assert_pbd_is_plugged ~__context ~sr:(Db.VDI.get_SR ~__context ~self:vdi) ;
+  Xapi_vdi_helpers.assert_managed ~__context ~vdi ;
+  Storage_utils.transform_storage_exn (fun () ->
+      let module C = Storage_interface.StorageAPI (Idl.Exn.GenClient (struct
+        let rpc = Storage_access.rpc
+      end)) in
+      let sr = Db.VDI.get_SR ~__context ~self:vdi in
+      let sr =
+        Db.SR.get_uuid ~__context ~self:sr |> Storage_interface.Sr.of_string
+      in
+      let vdi' =
+        Db.VDI.get_location ~__context ~self:vdi
+        |> Storage_interface.Vdi.of_string
+      in
+      let dbg = Ref.string_of (Context.get_task_id __context) in
+      let new_size = C.VDI.resize_online dbg sr vdi' size in
       Db.VDI.set_virtual_size ~__context ~self:vdi ~value:new_size
   )
 

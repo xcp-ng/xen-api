@@ -134,6 +134,7 @@ type atomic =
   | VBD_detach of Vbd.id
   | VBD_insert of Vbd.id * disk
   | VBD_set_active of Vbd.id * bool
+  | VBD_resize_online of Vbd.id * int64
   | VM_remove of Vm.id
   | PCI_plug of Pci.id * bool (* use Qmp.add_device *)
   | PCI_unplug of Pci.id
@@ -223,6 +224,8 @@ let rec name_of_atomic = function
       "VBD_insert"
   | VBD_set_active _ ->
       "VBD_set_active"
+  | VBD_resize_online _ ->
+      "VBD_resize_online"
   | VM_remove _ ->
       "VM_remove"
   | PCI_plug _ ->
@@ -2138,6 +2141,17 @@ let rec perform_atomic ~progress_callback ?result (op : atomic)
       | _ ->
           raise (Xenopsd_error (Bad_power_state (power, Running)))
     )
+  | VBD_resize_online (id, new_size) -> (
+      debug "VBD.resize_online %s" (VBD_DB.string_of_id id) ;
+      let vbd_t = VBD_DB.read_exn id in
+      let power = (B.VM.get_state (VM_DB.read_exn (fst id))).Vm.power_state in
+      match power with
+      | Running | Paused ->
+          B.VBD.resize_online t (VBD_DB.vm_of id) vbd_t new_size ;
+          VBD_DB.signal id
+      | _ ->
+          raise (Xenopsd_error (Bad_power_state (power, Running)))
+    )
   | VM_remove id -> (
       debug "VM.remove %s" id ;
       let vm_t = VM_DB.read_exn id in
@@ -2624,6 +2638,7 @@ and trigger_cleanup_after_failure_atom op t =
   | VBD_unplug (id, _)
   | VBD_deactivate (id, _)
   | VBD_detach id
+  | VBD_resize_online (id, _)
   | VBD_insert (id, _) ->
       immediate_operation dbg (fst id) (VBD_check_state id)
   | VIF_plug id
@@ -3555,6 +3570,9 @@ module VBD = struct
     Debug.with_thread_associated dbg
       (fun () -> debug "VBD.list %s" vm ; DB.list vm)
       ()
+
+  let resize_online _ dbg id new_size =
+    queue_operation dbg (DB.vm_of id) (Atomic (VBD_resize_online (id, new_size)))
 end
 
 module VIF = struct
@@ -4421,6 +4439,7 @@ let _ =
   Server.VBD.unplug (VBD.unplug ()) ;
   Server.VBD.eject (VBD.eject ()) ;
   Server.VBD.insert (VBD.insert ()) ;
+  Server.VBD.resize_online (VBD.resize_online ()) ;
   Server.VUSB.add (VUSB.add ()) ;
   Server.VUSB.remove (VUSB.remove ()) ;
   Server.VUSB.stat (VUSB.stat ()) ;

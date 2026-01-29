@@ -898,6 +898,7 @@ module QueryImpl (M : META) = struct
         ; ("Volume.clone", "VDI_CLONE")
         ; ("Volume.snapshot", "VDI_SNAPSHOT")
         ; ("Volume.resize", "VDI_RESIZE")
+        ; ("Volume.resize_online", "VDI_RESIZE_ONLINE")
         ; ("Volume.destroy", "VDI_DELETE")
         ; ("Volume.stat", "VDI_UPDATE")
         ]
@@ -1504,6 +1505,19 @@ module VDIImpl (M : META) = struct
     )
     |> wrap
 
+  let vdi_resize_online_impl dbg sr vdi' new_size =
+    (let vdi = Storage_interface.Vdi.string_of vdi' in
+     Attached_SRs.find sr >>>= fun sr ->
+     return_volume_rpc (fun () ->
+         Volume_client.resize_online (volume_rpc ~dbg) dbg sr vdi new_size
+     )
+     >>>= fun () ->
+     (* Now call Volume.stat to discover the size *)
+     stat ~dbg ~sr ~vdi >>>= fun response ->
+     return response.Xapi_storage.Control.virtual_size
+    )
+    |> wrap
+
   let vdi_stat_impl dbg sr vdi' =
     (let vdi = Storage_interface.Vdi.string_of vdi' in
      Attached_SRs.find sr >>>= fun sr ->
@@ -1934,6 +1948,7 @@ let bind ~volume_script_dir =
   S.VDI.set_name_label VDI.vdi_set_name_label_impl ;
   S.VDI.set_name_description VDI.vdi_set_name_description_impl ;
   S.VDI.resize VDI.vdi_resize_impl ;
+  S.VDI.resize_online VDI.vdi_resize_online_impl ;
   S.VDI.stat VDI.vdi_stat_impl ;
   S.VDI.introduce VDI.vdi_introduce_impl ;
   S.VDI.attach3 VDI.vdi_attach3_impl ;

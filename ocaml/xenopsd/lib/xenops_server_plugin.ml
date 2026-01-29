@@ -229,6 +229,8 @@ module type S = sig
 
     val get_device_action_request :
       Vm.id -> Vbd.t -> device_action_request option
+
+    val resize_online : Xenops_task.task_handle -> Vm.id -> Vbd.t -> int64 -> unit
   end
 
   module VIF : sig

@@ -29,7 +29,7 @@ open D
 open Record_util
 
 let all_ops : API.vbd_operations_set =
-  [`attach; `eject; `unplug; `unplug_force; `insert; `plug; `pause; `unpause]
+  [`attach; `eject; `unplug; `unplug_force; `insert; `plug; `pause; `unpause; `resize_online]
 
 type table = (API.vbd_operations, (string * string list) option) Hashtbl.t
 

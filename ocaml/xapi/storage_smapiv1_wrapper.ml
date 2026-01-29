@@ -814,6 +814,15 @@ functor
             Impl.VDI.resize context ~dbg ~sr ~vdi ~new_size
         )
 
+      let resize_online context ~dbg ~sr ~vdi ~new_size =
+        with_dbg ~name:"VDI.resize_online" ~dbg @@ fun di ->
+        info "VDI.resize_online dbg:%s sr:%s vdi:%s new_size:%Ld" di.log (s_of_sr sr)
+          (s_of_vdi vdi) new_size ;
+        let dbg = Debug_info.to_string di in
+        with_vdi sr vdi (fun () ->
+            Impl.VDI.resize_online context ~dbg ~sr ~vdi ~new_size
+        )
+
       let destroy_and_data_destroy call_name call_f context ~dbg ~sr ~vdi =
         with_dbg ~name:call_name ~dbg @@ fun di ->
         info "%s dbg:%s sr:%s vdi:%s" call_name di.log (s_of_sr sr)

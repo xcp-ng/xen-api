@@ -5443,6 +5443,16 @@ functor
             forward_vdi_op ~local_fn ~__context ~self:vdi ~remote_fn
         )
 
+      let resize_online ~__context ~vdi ~size =
+        info "VDI.resize_online: VDI = '%s'; size = %Ld" (vdi_uuid ~__context vdi) size ;
+        let local_fn = Local.VDI.resize_online ~vdi ~size in
+        let remote_fn = Client.VDI.resize_online ~vdi ~size in
+        let sR = Db.VDI.get_SR ~__context ~self:vdi in
+        with_sr_andor_vdi ~__context ~sr:(sR, `vdi_resize) ~vdi:(vdi, `resize_online)
+          ~doc:"VDI.resize_online" (fun () ->
+            forward_vdi_op ~local_fn ~__context ~self:vdi ~remote_fn
+        )
+
       let generate_config ~__context ~host ~vdi =
         info "VDI.generate_config: VDI = '%s'; host = '%s'"
           (vdi_uuid ~__context vdi)
@@ -5695,6 +5705,15 @@ functor
       let assert_attachable ~__context ~self =
         info "VBD.assert_attachable: VBD = '%s'" (vbd_uuid ~__context self) ;
         Local.VBD.assert_attachable ~__context ~self
+
+      let resize_online ~__context ~vbd ~size =
+        info "VBD.resize_online: VBD = '%s'; size = %Ld" (vbd_uuid ~__context vbd) size ;
+        let local_fn = Local.VBD.resize_online ~vbd ~size in
+        let remote_fn = Client.VBD.resize_online ~vbd ~size in
+        with_vbd_marked ~__context ~vbd ~doc:"VBD.resize_online" ~op:`resize_online (fun () ->
+          forward_vbd_op ~local_fn ~__context ~self:vbd ~remote_fn
+        ) ;
+        update_vbd_and_vdi_operations ~__context ~vbd
     end
 
     module VBD_metrics = struct end
