@@ -157,6 +157,13 @@ def main(argv):
                       % (machine, mmio_start, trad_compat, igdpt)])
 
     qemu_args.extend(argv[2:])
+    # XCP-ng: append extra device model args from xenstore (if present)
+    dm_extra = xenstore_read("/local/domain/%d/platform/device_model_args" % domid)
+    if dm_extra:
+        import shlex
+        if isinstance(dm_extra, bytes):
+            dm_extra = dm_extra.decode('utf-8', 'ignore')
+        qemu_args.extend(shlex.split(dm_extra))
 
     n = 0
 
