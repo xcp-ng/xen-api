@@ -254,7 +254,16 @@ def main(argv):
 
         n += 1
 
-    if vga_type == 'vgpu':
+    # If Xenstore says "vga=none", do not add any emulated VGA device.
+    # This is needed for GPU passthrough setups where emulated VGA confuses the guest.
+    vga_mode = xenstore_read("/local/domain/%d/platform/vga" % domid)
+    if isinstance(vga_mode, bytes):
+        vga_mode = vga_mode.decode('utf-8', 'ignore')
+    vga_mode = (vga_mode or "").strip()
+
+    if vga_mode == "none":
+        print("qemu-wrapper: platform/vga=none -> skipping emulated VGA device")
+    elif vga_type == 'vgpu':
         qemu_args += ["-device", "vgpu"]
     else:
         qemu_args += ["-device", ",".join([vga_type, "vgamem_mb=%d" % vgamem_mb] \
