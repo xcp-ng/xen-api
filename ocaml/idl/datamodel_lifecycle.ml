@@ -98,9 +98,11 @@ let prototyped_of_field = function
   | "VTPM", "persistence_backend" ->
       Some "22.26.0"
   | "SM", "supported_image_formats" ->
-      Some "26.1.13-next"
+      Some "26.1.16"
   | "SM", "host_pending_features" ->
       Some "24.37.0"
+  | "VIF", "trunks" ->
+      Some "26.1.16"
   | "host", "timezone" ->
       Some "26.0.0"
   | "host", "ntp_custom_servers" ->
@@ -154,7 +156,7 @@ let prototyped_of_field = function
   | "VM", "actions__after_softreboot" ->
       Some "23.1.0"
   | "pool", "auto_update_vm_secureboot_certificates" ->
-      Some "26.1.15-next"
+      Some "26.1.16"
   | "pool", "vm_console_idle_timeout" ->
       Some "26.1.0"
   | "pool", "limit_console_sessions" ->
@@ -246,7 +248,13 @@ let prototyped_of_message = function
   | "VTPM", "create" ->
       Some "22.26.0"
   | "VDI", "revert" ->
-      Some "26.1.13-next"
+      Some "26.1.16"
+  | "VIF", "set_trunks" ->
+      Some "26.1.16"
+  | "VIF", "remove_trunks" ->
+      Some "26.1.16"
+  | "VIF", "add_trunks" ->
+      Some "26.1.16"
   | "host", "set_servertime" ->
       Some "26.0.0"
   | "host", "get_ntp_synchronized" ->
