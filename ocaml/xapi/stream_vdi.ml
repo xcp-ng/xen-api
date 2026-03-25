@@ -368,22 +368,37 @@ let send_one ofd (__context : Context.t) rpc session_id progress refresh_session
                   (cluster_size + chunk_size - 1) / chunk_size
                 in
                 (* Iterate over allocated intervals, copying every cluster inside *)
-                List.iter
-                  (fun (cluster_no_left, cluster_no_right) ->
-                    let calc_chunk cluster =
-                      let cluster_offset = cluster * cluster_size in
-                      let chunk_no = cluster_offset / chunk_size in
-                      chunk_no
-                    in
-                    let left_chunk_no = calc_chunk cluster_no_left in
-                    let right_chunk_no =
-                      calc_chunk cluster_no_right + chunks_in_cluster - 1
-                    in
-                    for i = left_chunk_no to right_chunk_no do
-                      process_chunk i ~force:false
-                    done
-                  )
-                  cluster_list ;
+                let _ =
+                  List.fold_left
+                    (fun prev_chunk (cluster_no_left, cluster_no_right) ->
+                      let calc_chunk cluster =
+                        let cluster_offset = cluster * cluster_size in
+                        let chunk_no = cluster_offset / chunk_size in
+                        chunk_no
+                      in
+                      let left_chunk_no = calc_chunk cluster_no_left in
+                      let right_chunk_no =
+                        calc_chunk cluster_no_right + chunks_in_cluster - 1
+                      in
+
+                      (* If a chunk contains multiple clusters, we could have
+                       already copied it. In that case, start with the
+                       following chunk. *)
+                      let left_chunk_no =
+                        if left_chunk_no = prev_chunk then
+                          left_chunk_no + 1
+                        else
+                          left_chunk_no
+                      in
+
+                      for i = left_chunk_no to right_chunk_no do
+                        process_chunk i ~force:false
+                      done ;
+
+                      right_chunk_no
+                    )
+                    (-1) cluster_list
+                in
 
                 process_chunk last_chunk ~force:true
             with e ->
