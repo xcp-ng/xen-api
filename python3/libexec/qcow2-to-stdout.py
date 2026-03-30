@@ -106,7 +106,8 @@ class Interval:
         interval if true
         """
         # Check if cluster is within [min, max]
-        if self.intervals[-1][1] < cluster or self.intervals[0][0] > cluster:
+        if (len(self.intervals) == 0 or
+            (self.intervals[-1][1] < cluster or self.intervals[0][0] > cluster)):
             return False
 
         # Binary search for the interval that could contain the cluster
