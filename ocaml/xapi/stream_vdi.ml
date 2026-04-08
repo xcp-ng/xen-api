@@ -306,9 +306,7 @@ let send_one ofd (__context : Context.t) rpc session_id progress refresh_session
           | Ok (Some (driver, path)) when driver = "vhd" || driver = "qcow2"
             -> (
             try
-              let last_chunk =
-                Int64.((to_int size - to_int chunk_size + 1) / to_int chunk_size)
-              in
+              let last_chunk = Int64.((to_int size - 1) / to_int chunk_size) in
               if !Xapi_globs.vhd_legacy_blocks_format then
                 (* Read backing file headers, then only read and write
                  allocated clusters from the bitmap *)
