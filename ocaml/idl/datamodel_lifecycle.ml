@@ -137,6 +137,8 @@ let prototyped_of_field = function
       Some "24.37.0"
   | "VIF", "trunks" ->
       Some "26.17.0"
+  | "VIF", "ipv4_dns" ->
+      Some "26.19.0"
   | "host", "timezone" ->
       Some "26.0.0"
   | "host", "ntp_custom_servers" ->

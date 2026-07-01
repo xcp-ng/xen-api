@@ -3780,6 +3780,15 @@ module VIF = struct
           ; param_release= dundee_release
           ; param_default= Some (VString "")
           }
+        ; {
+            param_type= Set String
+          ; param_name= "dns"
+          ; param_doc=
+              "The list of DNS servers (for static mode only; leave empty to \
+               not set a DNS server)"
+          ; param_release= numbered_release "26.19.0"
+          ; param_default= Some (VSet [])
+          }
         ]
       ~allowed_roles:_R_VM_OP ()
 
@@ -4049,6 +4058,8 @@ module VIF = struct
               ~qualifier:DynamicRO "ipv4_gateway"
               "IPv4 gateway (the empty string means that no gateway is set)"
               ~default_value:(Some (VString ""))
+          ; field ~ty:(Set String) ~lifecycle:[] ~qualifier:DynamicRO "ipv4_dns"
+              "IPv4 DNS servers" ~default_value:(Some (VSet []))
           ; field ~ty:ipv6_configuration_mode
               ~lifecycle:
                 [
