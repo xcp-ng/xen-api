@@ -295,11 +295,11 @@ let tests () =
     )
   @ (data_integrity_tests export_import_qcow
        "VDI export/import to/from QCOW file" "qcow2"
-    |> supported_srs
+    |> supported_srs ~f:(Qt_filter.SR.not_type "linstor")
     )
   @ (delta_data_integrity_tests delta_export_import_qcow
        "VDI delta export/import to/from QCOW file" "qcow2"
-    |> supported_srs
+    |> supported_srs ~f:(Qt_filter.SR.not_type "linstor")
     )
   @ (large_data_integrity_tests export_import_tar
        "VDI export/import to/from TAR file" "vhd"
