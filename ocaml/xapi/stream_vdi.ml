@@ -315,7 +315,7 @@ let send_one ofd (__context : Context.t) rpc session_id progress refresh_session
                   | "vhd" ->
                       Vhd_tool_wrapper.parse_header path
                   | "qcow2" ->
-                      Qcow_tool_wrapper.parse_header path
+                      Vhd_qcow_parsing.Qcow.parse_header path
                   | _ ->
                       failwith (Printf.sprintf "%s: unreachable" __FUNCTION__)
                 in
@@ -344,7 +344,7 @@ let send_one ofd (__context : Context.t) rpc session_id progress refresh_session
                   | "vhd" ->
                       Vhd_tool_wrapper.parse_header_interval path
                   | "qcow2" ->
-                      Qcow_tool_wrapper.parse_header_interval path
+                      Vhd_qcow_parsing.Qcow.parse_header_interval path
                   | _ ->
                       failwith (Printf.sprintf "%s: unreachable" __FUNCTION__)
                 in

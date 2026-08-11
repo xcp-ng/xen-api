@@ -105,3 +105,45 @@ let parse_header_interval pipe_reader =
     )
   in
   (cluster_size, cluster_list)
+
+module Qcow = struct
+  let qemu_img = "/usr/lib64/xen/bin/qemu-img"
+
+  let read_header qcow_path =
+    let progress_cb _ = () in
+    let run_in_thread tool args pipe_writer replace_fds =
+      Thread.create
+        (fun () ->
+          Xapi_stdext_pervasives.Pervasiveext.finally
+            (fun () ->
+              run_tool tool progress_cb args ~output_fd:pipe_writer ~replace_fds
+            )
+            (fun () -> Unix.close pipe_writer)
+        )
+        ()
+    in
+
+    let map_pipe_reader, map_pipe_writer = Unix.pipe ~cloexec:true () in
+    let (_ : Thread.t) =
+      run_in_thread qemu_img
+        ["map"; qcow_path; "--output=json"]
+        map_pipe_writer []
+    in
+
+    let info_pipe_reader, info_pipe_writer = Unix.pipe ~cloexec:true () in
+    let (_ : Thread.t) =
+      run_in_thread qemu_img
+        ["info"; qcow_path; "--output=json"]
+        info_pipe_writer []
+    in
+
+    (map_pipe_reader, info_pipe_reader)
+
+  let parse_header qcow_path =
+    let pipe, _ = read_header qcow_path in
+    parse_header pipe
+
+  let parse_header_interval qcow_path =
+    let pipes = read_header qcow_path in
+    parse_header_qemu_img pipes
+end

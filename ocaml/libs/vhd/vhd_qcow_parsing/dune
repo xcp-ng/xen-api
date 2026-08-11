@@ -1,0 +1,13 @@
+(library
+  (name vhd_qcow_parsing)
+  (public_name vhd_qcow_parsing)
+  (modules vhd_qcow_parsing)
+  (libraries
+    threads.posix
+    xapi-log
+    forkexec
+    yojson
+    xapi-consts
+    xapi-stdext-pervasives
+  )
+)
