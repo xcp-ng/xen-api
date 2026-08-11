@@ -93,6 +93,7 @@ depends: [
   "xenstore_transport"
   "xmlm"
   "xml-light2" {= version}
+  "vhd_qcow_parsing" {= version}
   "yojson"
   "zstd" {= version}
   "odoc" {with-doc}

@@ -372,6 +372,25 @@
   (xenstore_transport :with-test)))
 
 (package
+ (name vhd_qcow_parsing)
+ (synopsis "Wrapper to parse VHD and QCOW headers to determine allocated
+           clusters")
+ (depends
+  dune
+  (ocaml (>= "4.13.0"))
+  (forkexec
+   (= :version))
+  (xapi-consts
+   (= :version))
+  (xapi-log
+   (= :version))
+  (xapi-stdext-pervasives
+   (= :version))
+  yojson
+ )
+)
+
+(package
  (name xapi)
  (synopsis "The toolstack daemon which implements the XenAPI")
  (description
@@ -490,6 +509,8 @@
   xmlm
   (xml-light2
    (= :version))
+  (vhd_qcow_parsing
+   (= :version))
   yojson
   (zstd
    (= :version))))
@@ -530,6 +551,8 @@
   (vhd-format
    (= :version))
   (vhd-format-lwt
+   (= :version))
+  (vhd_qcow_parsing
    (= :version))
   (xapi-idl
    (= :version))
