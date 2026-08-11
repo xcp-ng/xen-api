@@ -195,6 +195,7 @@
   uri
   uuid
   uuidm
+  vhd_qcow_parsing
   x509
   xapi_aux
   xapi-backtrace

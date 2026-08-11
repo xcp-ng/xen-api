@@ -21,45 +21,6 @@ let receive (progress_cb : int -> unit) (unix_fd : Unix.file_descr)
   let qcow_tool = !Xapi_globs.qcow_stream_tool in
   Vhd_qcow_parsing.run_tool qcow_tool progress_cb args ~input_fd:unix_fd
 
-let read_header qcow_path =
-  let progress_cb _ = () in
-  let run_in_thread tool args pipe_writer replace_fds =
-    Thread.create
-      (fun () ->
-        Xapi_stdext_pervasives.Pervasiveext.finally
-          (fun () ->
-            Vhd_qcow_parsing.run_tool tool progress_cb args
-              ~output_fd:pipe_writer ~replace_fds
-          )
-          (fun () -> Unix.close pipe_writer)
-      )
-      ()
-  in
-
-  let map_pipe_reader, map_pipe_writer = Unix.pipe ~cloexec:true () in
-  let (_ : Thread.t) =
-    run_in_thread !Xapi_globs.qemu_img
-      ["map"; qcow_path; "--output=json"]
-      map_pipe_writer []
-  in
-
-  let info_pipe_reader, info_pipe_writer = Unix.pipe ~cloexec:true () in
-  let (_ : Thread.t) =
-    run_in_thread !Xapi_globs.qemu_img
-      ["info"; qcow_path; "--output=json"]
-      info_pipe_writer []
-  in
-
-  (map_pipe_reader, info_pipe_reader)
-
-let parse_header qcow_path =
-  let pipe, _ = read_header qcow_path in
-  Vhd_qcow_parsing.parse_header pipe
-
-let parse_header_interval qcow_path =
-  let pipes = read_header qcow_path in
-  Vhd_qcow_parsing.parse_header_qemu_img pipes
-
 let send ?relative_to (progress_cb : int -> unit) (unix_fd : Unix.file_descr)
     (path : string) (_size : Int64.t) =
   let qcow_of_device =
@@ -69,7 +30,9 @@ let send ?relative_to (progress_cb : int -> unit) (unix_fd : Unix.file_descr)
 
   (* If VDI is backed by QCOW, parse the header to determine nonzero clusters
      to avoid reading all of the raw disk *)
-  let input_fds = Result.map read_header qcow_path |> Result.to_option in
+  let input_fds =
+    Result.map Vhd_qcow_parsing.Qcow.read_header qcow_path |> Result.to_option
+  in
 
   (* TODO: If VHD headers are to be consulted as well, qcow2-to-stdout
      needs to properly account for cluster_bits. Currently QCOW2 export
@@ -84,7 +47,9 @@ let send ?relative_to (progress_cb : int -> unit) (unix_fd : Unix.file_descr)
     | None ->
         None
   in
-  let diff_fds = Option.map read_header relative_to_qcow_path in
+  let diff_fds =
+    Option.map Vhd_qcow_parsing.Qcow.read_header relative_to_qcow_path
+  in
 
   let map_fd_string = Uuidx.(to_string (make ())) in
   let info_fd_string = Uuidx.(to_string (make ())) in

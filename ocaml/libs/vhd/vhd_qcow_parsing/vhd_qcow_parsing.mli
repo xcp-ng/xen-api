@@ -25,5 +25,10 @@ val parse_header : Unix.file_descr -> int * int list
 
 val parse_header_interval : Unix.file_descr -> int * (int * int) list
 
-val parse_header_qemu_img :
-  Unix.file_descr * Unix.file_descr -> int * (int * int) list
+module Qcow : sig
+  val read_header : string -> Unix.file_descr * Unix.file_descr
+
+  val parse_header : string -> int * int list
+
+  val parse_header_interval : string -> int * (int * int) list
+end
