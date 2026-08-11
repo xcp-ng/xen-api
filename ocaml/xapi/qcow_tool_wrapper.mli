@@ -23,7 +23,3 @@ val send :
   -> string
   -> int64
   -> unit
-
-val parse_header : string -> int * int list
-
-val parse_header_interval : string -> int * (int * int) list
