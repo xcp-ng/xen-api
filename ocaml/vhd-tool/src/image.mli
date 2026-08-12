@@ -1,6 +1,7 @@
 (** An image may either be backed by a vhd-format file or a
     raw-format file. *)
-type t = [`Vhd of string | `Raw of string | `Nbd of string * string]
+type t =
+  [`Vhd of string | `Qcow of string | `Raw of string | `Nbd of string * string]
 
 val to_string : t -> string
 (** Pretty-print the image *)
