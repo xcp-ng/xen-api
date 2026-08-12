@@ -2822,6 +2822,47 @@ functor
                 )
                 to_include false
 
+      let qcow_common raw cluster_size cluster_list =
+        let cluster_to_sector x =
+          Int64.of_int (x * cluster_size / sector_size)
+        in
+        let cluster_to_byte x = Int64.of_int (x * cluster_size) in
+        let empty_clusters x = `Empty (cluster_to_sector x) in
+        let copy_clusters offset len =
+          `Copy (raw, cluster_to_sector offset, cluster_to_sector len)
+        in
+        let rec cluster i = function
+          | (start_cluster, _) :: _ as lst when i < start_cluster ->
+              let len = start_cluster - i in
+              let next_cluster () = cluster start_cluster lst in
+              return (Cons (empty_clusters len, next_cluster))
+          | (start_cluster, end_cluster) :: tail ->
+              let len = end_cluster - start_cluster + 1 in
+              let next_cluster () = cluster (end_cluster + 1) tail in
+              return (Cons (copy_clusters start_cluster len, next_cluster))
+          | [] ->
+              return End
+        in
+        let rec count i size = function
+          | (start_cluster, _) :: _ as lst when i < start_cluster ->
+              let len = start_cluster - i in
+              let size =
+                {size with empty= Int64.(add size.empty (cluster_to_byte len))}
+              in
+              count start_cluster size lst
+          | (start_cluster, end_cluster) :: tail ->
+              let len = end_cluster - start_cluster + 1 in
+              let size =
+                {size with copy= Int64.(add size.copy (cluster_to_byte len))}
+              in
+              count (end_cluster + 1) size tail
+          | [] ->
+              size
+        in
+        let elements = cluster 0 cluster_list in
+        let size = count 0 empty cluster_list in
+        elements >>= fun elements -> return {elements; size}
+
       let raw_common ?from ?(raw : 'a) (vhd : fd Vhd.t) =
         let block_size_sectors_shift =
           vhd.Vhd.header.Header.block_size_sectors_shift
@@ -3203,6 +3244,8 @@ functor
 
       let vhd ?from (raw : 'a) (vhd : fd Vhd.t) =
         Vhd_input.vhd_common ?from ~raw vhd
+
+      let qcow raw qcow_info = Vhd_input.qcow_common raw qcow_info
 
       let blocks_json = Vhd_input.vhd_blocks_to_json
 

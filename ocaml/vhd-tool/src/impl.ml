@@ -878,6 +878,26 @@ let make_stream common source relative_to source_format destination_format =
              )
           )
   )
+  | "hybridqcow", "raw" -> (
+    (* expect source to be block_device:qcow *)
+    match split ~limit:2 ~sep:':' source with
+    | [raw; qcow] ->
+        let cluster_size, cluster_list =
+          Vhd_qcow_parsing.Qcow.parse_header_interval qcow
+        in
+        (* TODO: respect relative_to *)
+        Vhd_format_lwt.IO.openfile raw false >>= fun raw ->
+        Hybrid_input.qcow raw cluster_size cluster_list
+    | _ ->
+        fail
+          (Failure
+             (Printf.sprintf
+                "Failed to parse hybrid source: %s (expected \
+                 raw_disk|qcow_image)"
+                source
+             )
+          )
+  )
   | "hybrid", "vhd" -> (
     (* expect source to be block_device:vhd *)
     match split ~limit:2 ~sep:':' source with
