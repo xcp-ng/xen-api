@@ -28,6 +28,7 @@
     unix
     uri
     uuidm
+    vhd_qcow_parsing
     vhd-format
     vhd-format-lwt
     tapctl
