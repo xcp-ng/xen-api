@@ -469,6 +469,8 @@ module From_file : functor (F : S.FILE) -> sig
         stream will contain only the virtual updates required to transform
         [from] into [t] *)
 
+    val qcow : fd -> int -> (int * int) list -> fd stream t
+
     val blocks_json : fd Vhd.t -> unit t
 
     val blocks_json_interval : fd Vhd.t -> unit t

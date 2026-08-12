@@ -8,11 +8,14 @@ let is_nbd_device path =
   let Stat.{major; _} = get_device_numbers path in
   major = nbd_device_num
 
-type t = [`Vhd of string | `Raw of string | `Nbd of string * string]
+type t =
+  [`Vhd of string | `Qcow of string | `Raw of string | `Nbd of string * string]
 
 let to_string = function
   | `Vhd x ->
       "vhd:" ^ x
+  | `Qcow x ->
+      "qcow:" ^ x
   | `Raw x ->
       "raw:" ^ x
   | `Nbd (x, y) ->
@@ -56,6 +59,8 @@ let image_behind_nbd_device image =
           match Tapctl.find (Tapctl.create ()) ~pid ~minor with
           | _, _, Some ("vhd", vhd) ->
               Some (`Vhd vhd)
+          | _, _, Some ("qcow2", qcow) ->
+              Some (`Qcow qcow)
           | _, _, Some ("aio", vhd) ->
               Some (`Raw vhd)
           | _, _, _ | (exception _) ->
@@ -68,6 +73,8 @@ let of_device path =
   match Tapctl.of_device (Tapctl.create ()) path with
   | Some (_, _, Some ("vhd", vhd)) ->
       Some (`Vhd vhd)
+  | Some (_, _, Some ("qcow2", qcow)) ->
+      Some (`Qcow qcow)
   | Some (_, _, Some ("aio", vhd)) ->
       Some (`Raw vhd)
   | _ ->

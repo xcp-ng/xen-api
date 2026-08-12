@@ -413,6 +413,8 @@ let _ =
         Some x
     | Some (`Raw _) ->
         None
+    | Some (`Qcow _) ->
+        None (* TODO: make delta copies work with QCOW *)
     | Some (`Nbd _) ->
         None (* TODO: make delta copies work with NBD, CA-289660 *)
     | None ->
@@ -473,6 +475,18 @@ let _ =
           src vhd (string_opt relative_to) dest ;
         let t =
           Impl.make_stream common (src ^ ":" ^ vhd) relative_to "hybrid" "raw"
+        in
+        (t, dest, "raw")
+    | _, Some (`Qcow qcow), _, _ ->
+        (* experimental tapdisk bypass mode is not supported for QCOW2, assume false *)
+        let dest = rewrite_url dest in
+        info
+          "streaming from raw %s using BAT from %s (relative to %s) to raw %s"
+          src qcow (string_opt relative_to) dest ;
+        let t =
+          Impl.make_stream common
+            (src ^ ":" ^ qcow)
+            relative_to "hybridqcow" "raw"
         in
         (t, dest, "raw")
     | _, Some (`Nbd (server, export_name)), _, _ ->
