@@ -394,8 +394,7 @@ let make ~xc ~xs vm_info vcpus domain_config uuid final_uuid no_sharept
       Ok ()
   in
   let trap_unmapped_accesses =
-    get_platform_key ~key:"trap-unmapped-accesses" ~default:is_arm
-      require_arm
+    get_platform_key ~key:"trap-unmapped-accesses" ~default:is_arm require_arm
   in
 
   info "VM = %s; Creating %s%s%s%s%s%s" (Uuidx.to_string uuid)
