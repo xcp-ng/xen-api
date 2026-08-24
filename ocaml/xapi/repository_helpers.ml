@@ -22,6 +22,12 @@ open Updateinfo
 module LivePatchSet = Set.Make (LivePatch)
 module RpmFullNameSet = Set.Make (String)
 
+module PkgSet = Set.Make (struct
+  type t = Pkg.t * string
+
+  let compare = Stdlib.compare
+end)
+
 let pool_update_ops_mutex = Mutex.create ()
 
 module Pkgs = (val Pkg_mgr.get_pkg_mgr)
@@ -550,9 +556,10 @@ let get_updates_from_updateinfo ~__context repositories =
     get_pkgs_from_yum_updateinfo_list Pkg_mgr.Updateinfo.Updates repositories
   in
   (* 'new_updates' are a list of RPM packages to be installed, rather than updated *)
+  let updates_set = PkgSet.of_list updates in
   let new_updates =
     get_pkgs_from_yum_updateinfo_list Pkg_mgr.Updateinfo.Available repositories
-    |> List.filter (fun x -> not (List.mem x updates))
+    |> List.filter (fun x -> not (PkgSet.mem x updates_set))
     |> List.filter (fun (pkg, _) -> not (is_obsoleted pkg.Pkg.name repositories))
   in
   new_updates @ updates
@@ -729,11 +736,12 @@ let get_updates_from_repoquery repositories =
   (* Use 'updates' to decrease the number of packages to apply 'is_obsoleted' *)
   let Pkg_mgr.{cmd; params} = Pkgs.repoquery_updates ~repositories in
   let updates = get_pkgs_from_repoquery cmd params in
+  let updates_set = PkgSet.of_list updates in
   (* 'new_updates' are a list of RPM packages to be installed, rather than updated *)
   let Pkg_mgr.{cmd; params} = Pkgs.repoquery_available ~repositories in
   let new_updates =
     get_pkgs_from_repoquery cmd params
-    |> List.filter (fun x -> not (List.mem x updates))
+    |> List.filter (fun x -> not (PkgSet.mem x updates_set))
     |> List.filter (fun (pkg, _) -> not (is_obsoleted pkg.Pkg.name repositories))
   in
   new_updates @ updates
