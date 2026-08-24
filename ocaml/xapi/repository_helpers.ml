@@ -748,6 +748,8 @@ module YumUpgradeOutput = struct
 
   let is_white = Astring.Char.Ascii.is_white
 
+  let replacing_pattern = Re.Str.regexp "^[ ]+replacing .+$"
+
   let rec line ~section ~section_acc ~acc =
     let rec line_after_txn_summary sections =
       at_end_of_input >>= function
@@ -800,34 +802,33 @@ module YumUpgradeOutput = struct
               line_after_txn_summary acc
         )
         | l -> (
-            let pattern = Re.Str.regexp "^[ ]+replacing .+$" in
-            match
-              ( section
-              , Re.Str.string_match pattern l 0
-              , String.starts_with ~prefix:"Error: " l
-              )
-            with
-            | Some s, true, false ->
-                (* in a section, but starting with 'replacing', ignoring the line.
-                 * https://github.com/rpm-software-management/yum/blob/master/output.py#L1622
-                 * https://github.com/rpm-software-management/dnf5/blob/main/libdnf5-cli/output/transaction_table.cpp#L373
-                 *)
-                line ~section:(Some s) ~section_acc ~acc
-            | Some s, false, false ->
-                (* in a section, append to the section's list *)
-                line ~section:(Some s) ~section_acc:(l :: section_acc) ~acc
-            | None, false, true ->
-                (* error reported from yum upgrade *)
-                fail l
-            | None, false, false ->
-                (* not in any section, ignoring the line *)
-                line ~section:None ~section_acc:[] ~acc
-            | _ ->
-                fail
-                  (Printf.sprintf
-                     "Unexpected output from yum upgrade (dry run): %s" l
-                  )
-          )
+          match
+            ( section
+            , Re.Str.string_match replacing_pattern l 0
+            , String.starts_with ~prefix:"Error: " l
+            )
+          with
+          | Some s, true, false ->
+              (* in a section, but starting with 'replacing', ignoring the line.
+               * https://github.com/rpm-software-management/yum/blob/master/output.py#L1622
+               * https://github.com/rpm-software-management/dnf5/blob/main/libdnf5-cli/output/transaction_table.cpp#L373
+               *)
+              line ~section:(Some s) ~section_acc ~acc
+          | Some s, false, false ->
+              (* in a section, append to the section's list *)
+              line ~section:(Some s) ~section_acc:(l :: section_acc) ~acc
+          | None, false, true ->
+              (* error reported from yum upgrade *)
+              fail l
+          | None, false, false ->
+              (* not in any section, ignoring the line *)
+              line ~section:None ~section_acc:[] ~acc
+          | _ ->
+              fail
+                (Printf.sprintf
+                   "Unexpected output from yum upgrade (dry run): %s" l
+                )
+        )
       )
     | true ->
         return ([], None)
