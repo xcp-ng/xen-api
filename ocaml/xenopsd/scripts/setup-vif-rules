@@ -222,12 +222,22 @@ def get_parent_bridge(bridge_name):
     (rc, stdout, stderr) = doexec([vsctl, "br-to-parent", bridge_name ])
     return stdout.readline().strip()
 
+def vswitch_enable_openflow10(bridge_name):
+    (rc, stdout, stderr) = doexec([vsctl, "get", "Bridge", bridge_name, "protocols"])
+    protocols = stdout.readline().strip()
+
+    if protocols == "[]" or "OpenFlow10" in protocols:
+        return
+
+    doexec([vsctl, "add", "Bridge", bridge_name, "protocols", "OpenFlow10"])
+
 def clear_vswitch_rules(vif_name):
     '''clear OVS rules, if any'''
     port = get_vswitch_port(vif_name)
     if port not in ['', '-1']:
         bridge_name = get_current_bridge_name_vswitch(vif_name)
         bridge_name = get_parent_bridge(bridge_name)
+        vswitch_enable_openflow10(bridge_name)
         run(ON_ERROR_FAIL, [ofctl, "del-flows", bridge_name, "in_port=%s,cookie=1/-1" % port])
 
 def add_flow(bridge_name, args):
@@ -238,6 +248,7 @@ def create_vswitch_rules(bridge_name, config):
     if port in ['', '-1']:
         return
     bridge_name = get_parent_bridge(bridge_name)
+    vswitch_enable_openflow10(bridge_name)
     mac = config["mac"]
     ipv4_allowed = config["ipv4_allowed"]
     ipv6_allowed = config["ipv6_allowed"]
