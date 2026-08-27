@@ -225,16 +225,18 @@ def get_parent_bridge(bridge_name):
 def clear_vswitch_rules(vif_name):
     '''clear OVS rules, if any'''
     port = get_vswitch_port(vif_name)
-    if port != '':
+    if port not in ['', '-1']:
         bridge_name = get_current_bridge_name_vswitch(vif_name)
         bridge_name = get_parent_bridge(bridge_name)
-        doexec([ofctl, "del-flows", bridge_name, "in_port=%s,cookie=1/-1" % port])
+        run(ON_ERROR_FAIL, [ofctl, "del-flows", bridge_name, "in_port=%s,cookie=1/-1" % port])
 
 def add_flow(bridge_name, args):
-    doexec([ofctl, "add-flow", bridge_name, "cookie=1," + args])
+    run(ON_ERROR_FAIL, [ofctl, "add-flow", bridge_name, "cookie=1," + args])
 
 def create_vswitch_rules(bridge_name, config):
     port = get_vswitch_port(vif_name)
+    if port in ['', '-1']:
+        return
     bridge_name = get_parent_bridge(bridge_name)
     mac = config["mac"]
     ipv4_allowed = config["ipv4_allowed"]
