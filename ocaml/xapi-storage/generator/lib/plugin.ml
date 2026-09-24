@@ -23,6 +23,9 @@ type query_result = {
 
 type srs = string list [@@deriving rpcty]
 
+type cluster_event = Host_evicted of string | Host_added of string
+[@@deriving rpcty]
+
 let dbg =
   Param.mk ~name:"dbg"
     ~description:["Debug context from the caller"]
@@ -65,6 +68,16 @@ module Plugin (R : RPC) = struct
       ; " automatically included in bug reports."
       ]
       (dbg @-> returning diagnostics_p error)
+
+  let notify_cluster_event =
+    let event_p =
+      Param.mk ~name:"event"
+        ~description:["A string containing the type of event for the cluster"]
+        cluster_event
+    in
+    declare "notify_cluster_event"
+      ["Notify the evication/addition of an host into a cluster"]
+      (dbg @-> event_p @-> returning unit error)
 
   let implementation =
     R.implement
