@@ -72,6 +72,7 @@ module Vm = struct
     | Standard_VGA
     | Vgpu
     | IGD_passthrough of igd_passthrough
+    | Xenfb
   [@@default Cirrus] [@@deriving rpcty, sexp]
 
   type firmware_type = Bios | Uefi of Nvram_uefi_variables.t

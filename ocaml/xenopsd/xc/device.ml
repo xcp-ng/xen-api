@@ -2043,6 +2043,7 @@ module Dm_Common = struct
     | Cirrus
     | Vgpu of Xenops_interface.Vgpu.t list
     | GVT_d
+    | Xenfb
 
   (* Display output / keyboard input *)
   type disp_opt =
@@ -2204,6 +2205,8 @@ module Dm_Common = struct
           []
       | GVT_d ->
           ["-std-vga"]
+      | Xenfb ->
+          ["-xenfb"]
       (* relies on pci-passthrough *)
     in
     let videoram_opt = ["-videoram"; string_of_int info.video_mib] in

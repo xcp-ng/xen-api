@@ -130,6 +130,8 @@ module VideoMode = Generic.MakeStateful (struct
           "Vgpu"
       | Vm.IGD_passthrough Vm.GVT_d ->
           "IGD_passthrough"
+      | Vm.Xenfb ->
+          "Xenfb"
   end
 
   module State = Test_state.XapiDb
@@ -167,6 +169,7 @@ module VideoMode = Generic.MakeStateful (struct
       ; ( {oc= []; platform= [("igd_passthrough", "true"); ("vga", "std")]}
         , Vm.(IGD_passthrough GVT_d)
         )
+      ; ({oc= []; platform= [("vga", "xenfb")]}, Vm.Xenfb)
       ]
 end)
 

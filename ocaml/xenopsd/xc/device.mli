@@ -325,6 +325,7 @@ module Dm : sig
     | Cirrus
     | Vgpu of Xenops_interface.Vgpu.t list
     | GVT_d
+    | Xenfb
 
   type disp_opt =
     | NONE

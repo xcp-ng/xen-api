@@ -2280,6 +2280,8 @@ module VM = struct
                 internal_error "Vgpu mode specified but no vGPUs"
             | Vgpu, vgpus ->
                 Device.Dm.Vgpu vgpus
+            | Xenfb, [] ->
+                Device.Dm.Xenfb
             | _ ->
                 internal_error "Invalid graphics mode"
           in
