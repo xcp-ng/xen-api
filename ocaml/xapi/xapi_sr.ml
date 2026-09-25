@@ -726,7 +726,11 @@ let update_vdis ~__context ~sr db_vdis vdi_infos =
           ~value:(Date.of_iso8601 vi.snapshot_time)
       ) ;
       let snapshot_of = find_vdi db_vdi_map vi.snapshot_of in
-      if v.API.vDI_snapshot_of <> snapshot_of then (
+      (* Never reset snapshot_of to NULL - this means dangling references will
+         be preserved if the VDI it points to has been destroyed.
+         This fixes a race condition where SR.scan in the middle of VM.revert
+         would corrupt snapshot_of fields of snapshots and non-snapshots *)
+      if snapshot_of <> Ref.null && v.API.vDI_snapshot_of <> snapshot_of then (
         debug "%s snapshot_of <- %s" (Ref.string_of r)
           (Ref.string_of snapshot_of) ;
         Db.VDI.set_snapshot_of ~__context ~self:r ~value:snapshot_of
