@@ -843,7 +843,7 @@ let qcow_to_stdout = ref "/opt/xensource/libexec/qcow2-to-stdout.py"
 
 let qcow_stream_tool = ref "qcow-stream-tool"
 
-let qemu_img = ref "/usr/lib64/xen/bin/qemu-img"
+let qemu_img = ref "/usr/bin/qemu-img"
 
 let fence = ref "fence"
 
