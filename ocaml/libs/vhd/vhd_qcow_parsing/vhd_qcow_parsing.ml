@@ -107,7 +107,7 @@ let parse_header_interval pipe_reader =
   (cluster_size, cluster_list)
 
 module Qcow = struct
-  let qemu_img = "/usr/lib64/xen/bin/qemu-img"
+  let qemu_img = "/usr/bin/qemu-img"
 
   let read_header qcow_path =
     let progress_cb _ = () in
