@@ -37,6 +37,88 @@ let require_str name arg =
         Some arg
     )
 
+(** [find_backend_device path] returns [Some path'] where [path'] is the backend
+    path in this domain corresponding to the frontend device [path].
+    Copied from ocaml/vhd-tool/cli/sparse_dd.ml *)
+let find_backend_device path =
+  try
+    let open Ezxenstore_core.Xenstore in
+    let module Stat = Xapi_stdext_unix.Unixext.Stat in
+    let rdev = (Unix.LargeFile.stat path).Unix.LargeFile.st_rdev in
+    let Stat.{major; minor} = Stat.decode_st_dev rdev in
+    let link =
+      Unix.readlink (Printf.sprintf "/sys/dev/block/%d:%d/device" major minor)
+    in
+    match List.rev (String.split_on_char '/' link) with
+    | id :: "xen" :: "devices" :: _ when String.starts_with ~prefix:"vbd-" id ->
+        let id = int_of_string (String.sub id 4 (String.length id - 4)) in
+        with_xs (fun xs ->
+            let self = xs.Xs.read "domid" in
+            let backend =
+              xs.Xs.read (Printf.sprintf "device/vbd/%d/backend" id)
+            in
+            let params = xs.Xs.read (Printf.sprintf "%s/params" backend) in
+            match String.split_on_char '/' backend with
+            | "local" :: "domain" :: bedomid :: _ when bedomid = self ->
+                Some params
+            | _ ->
+                None
+        )
+    | _ ->
+        None
+  with _ -> None
+
+let tapdisk_nbd_socket device =
+  let path = find_backend_device device |> Option.value ~default:device in
+  match Tapctl.of_device (Tapctl.create ()) path with
+  | Some (tapdev, _, _) ->
+      Printf.sprintf "/var/run/blktap-control/nbd%d.%d"
+        (Tapctl.get_tapdisk_pid tapdev)
+        (Tapctl.get_minor tapdev)
+  | None ->
+      failwith (Printf.sprintf "No tapdisk found for %s (%s)" device path)
+
+(** [with_tapdisk_nbd_client device f] connects to the NBD server of the
+    tapdisk serving [device] and applies [f] to the resulting NBD client *)
+let with_tapdisk_nbd_client device f =
+  let socket_path = tapdisk_nbd_socket device in
+  Lwt_log.notice_f "Connecting to tapdisk NBD server %s" socket_path
+  >>= fun () ->
+  let fd = Lwt_unix.socket Lwt_unix.PF_UNIX Lwt_unix.SOCK_STREAM 0 in
+  Lwt.finalize
+    (fun () ->
+      Lwt_unix.connect fd (Lwt_unix.ADDR_UNIX socket_path) >>= fun () ->
+      let channel =
+        Nbd.Channel.generic_of_cleartext_channel
+          (Nbd_unix.cleartext_channel_of_fd fd None)
+      in
+      (* tapdisk serves a single export and ignores the name *)
+      Nbd_unix.Client.negotiate channel "" >>= fun (client, _, _) -> f client
+    )
+    (ignore_exn_delayed (fun () -> Lwt_unix.close fd))
+
+(** Since tapdisk silently truncates unaligned requests, blocking the session;
+    and the default Nbd_unix.Client has sector_size=1; this is a wrapper with
+    sector_size=512 to reject unaligned requests *)
+module Tapdisk_client = struct
+  include Nbd_unix.Client
+
+  let sector_size = 512
+
+  let get_info t =
+    get_info t >|= fun info ->
+    Mirage_block.
+      {
+        info with
+        sector_size
+      ; size_sectors= Int64.(div info.size_sectors (of_int sector_size))
+      }
+
+  let read t sector bufs = read t Int64.(mul sector (of_int sector_size)) bufs
+
+  let write t sector bufs = write t Int64.(mul sector (of_int sector_size)) bufs
+end
+
 let with_attached_vdi vDI rpc session_id f =
   Lwt_log.notice "Looking up control domain UUID in xensource inventory"
   >>= fun () ->
@@ -75,8 +157,15 @@ let handle_connection fd tls_role =
     in
     Xen_api.VDI.get_by_uuid ~rpc ~session_id ~uuid:vdi_uuid >>= fun vdi_ref ->
     with_attached_vdi vdi_ref rpc session_id (fun filename ->
-        Cleanup.Block.with_block filename
-          (Nbd_unix.Server.serve t ~read_only:true (module Block))
+        Lwt.catch
+          (fun () ->
+            with_tapdisk_nbd_client filename
+              (Nbd_unix.Server.serve t ~read_only:true (module Tapdisk_client))
+          )
+          (fun _ ->
+            Cleanup.Block.with_block filename
+              (Nbd_unix.Server.serve t ~read_only:true (module Block))
+          )
     )
   in
   Nbd_unix.with_channel fd tls_role (fun channel ->

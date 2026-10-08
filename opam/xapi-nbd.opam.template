@@ -8,22 +8,6 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
   ["dune" "runtest" "-p" name "-j" jobs] {with-test}
 ]
-depends: [
-  "ocaml"
-  "dune" {>= "3.15"}
-  "alcotest" {with-test}
-  "alcotest-lwt" {with-test}
-  "cmdliner"
-  "lwt" {>= "3.0.0" & with-test}
-  "lwt_log"
-  "mirage-block-unix"
-  "nbd-unix"
-  "uri"
-  "uuid"
-  "xapi-inventory"
-  "xapi-tracing"
-  "xen-api-client-lwt"
-]
 tags: [ "org:mirage" "org:xapi-project" ]
 synopsis: "Expose XenServer disks conveniently over NBD"
 url {

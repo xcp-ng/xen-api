@@ -221,7 +221,28 @@
  (name xapi-open-uri))
 
 (package
- (name xapi-nbd))
+ (name xapi-nbd)
+ (depends
+  ocaml
+  (dune (>= "3.15"))
+  (alcotest :with-test)
+  (alcotest-lwt :with-test)
+  cmdliner
+  (ezxenstore
+   (= :version))
+  (lwt (and (>= "3.0.0") :with-test))
+  lwt_log
+  mirage-block-unix
+  nbd-unix
+  uri
+  uuid
+  xapi-inventory
+  xapi-tracing
+  xen-api-client-lwt
+  (xapi-stdext-unix
+   (= :version))
+  )
+ )
 
 (package
  (name xapi-log)

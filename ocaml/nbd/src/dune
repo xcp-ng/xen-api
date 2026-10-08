@@ -4,6 +4,7 @@
  (libraries
   cmdliner
   consts
+  ezxenstore.core
   fmt
   local_xapi_session
   lwt
@@ -14,12 +15,14 @@
   nbd
   nbd-unix
   rpclib.core
+  tapctl
   uri
   unix
   uuid
   vbd_store
   xapi-consts
   xapi-inventory
+  xapi-stdext-unix
   xapi-types
   xen-api-client-lwt
   )
