@@ -311,7 +311,7 @@ let dispatch ?task ?(supports_async = true) ~session_id () =
     Server_helpers.do_dispatch ~session_id supports_async "Test.call"
       (fun ~__context:_ -> ran := true)
       (fun () -> Rpc.Null)
-      None
+      Unix.stdout
       (request_with_task_header ?task ~session_id ())
       "test_do_dispatch" `Sync true
   in
