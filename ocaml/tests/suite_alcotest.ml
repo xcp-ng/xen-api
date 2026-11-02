@@ -73,4 +73,5 @@ let () =
     @ Test_tracked_user_agents.tests
     @ Test_vm_protected_keys.tests
     @ Test_vm_protected_fields.tests
+    @ Test_network_protected_keys.tests
     )
